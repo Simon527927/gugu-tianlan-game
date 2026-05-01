@@ -1,0 +1,3040 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>姑姑抓天蓝</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      background: #f9efe2;
+      color: #553c2c;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      min-height: 46px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 700;
+      color: #563a24;
+      background: #ffd166;
+      box-shadow: 0 5px 0 #d99236, 0 8px 18px rgba(73, 47, 22, 0.15);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #d99236, 0 5px 12px rgba(73, 47, 22, 0.12);
+    }
+
+    .app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.55), transparent 22%),
+        linear-gradient(180deg, #fff3df 0%, #f7dec1 100%);
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .menu-screen,
+    .end-screen,
+    .level-screen {
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+      text-align: center;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(38px, 12vw, 58px);
+      line-height: 1.05;
+      color: #e56b3c;
+      text-shadow: 0 4px 0 #ffe0a8;
+    }
+
+    .subtitle,
+    .best-card,
+    .result-card {
+      margin: 0 auto;
+      max-width: 360px;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .best-card,
+    .result-card {
+      width: 100%;
+      border: 3px solid rgba(121, 82, 48, 0.18);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255, 252, 244, 0.76);
+      box-shadow: 0 10px 22px rgba(110, 72, 34, 0.12);
+    }
+
+    .difficulty-row,
+    .button-stack,
+    .level-list {
+      display: grid;
+      gap: 12px;
+      width: min(100%, 360px);
+      margin: 0 auto;
+    }
+
+    .difficulty-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .difficulty-btn {
+      padding: 10px 8px;
+      min-height: 44px;
+      background: #fff6d8;
+      box-shadow: inset 0 0 0 2px rgba(130, 89, 49, 0.18), 0 4px 0 #dcc58e;
+      font-size: 14px;
+    }
+
+    .difficulty-btn.selected {
+      background: #ffb84d;
+      color: #4b2b16;
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.55), 0 4px 0 #c98228;
+    }
+
+    .level-card {
+      min-height: 58px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      display: grid;
+      gap: 3px;
+      text-align: left;
+      background: rgba(255, 252, 244, 0.86);
+      border: 2px solid rgba(121, 82, 48, 0.18);
+      box-shadow: 0 5px 0 #dcc58e, 0 8px 18px rgba(73, 47, 22, 0.12);
+    }
+
+    .level-card.locked {
+      opacity: 0.55;
+      filter: grayscale(0.45);
+    }
+
+    .level-card strong {
+      font-size: 15px;
+      color: #563a24;
+    }
+
+    .level-card span {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(85, 60, 44, 0.78);
+    }
+
+    .stars {
+      color: #f5a400;
+      font-size: 18px;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 0 rgba(101, 65, 26, 0.12);
+    }
+
+    .primary-btn {
+      background: #78d39c;
+      box-shadow: 0 5px 0 #3a9c66, 0 8px 18px rgba(25, 96, 60, 0.18);
+    }
+
+    .secondary-btn {
+      background: #bde0fe;
+      box-shadow: 0 5px 0 #6aa7d8, 0 8px 18px rgba(37, 93, 133, 0.14);
+    }
+
+    .game-screen {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .game-screen.active {
+      display: block;
+    }
+
+    .top-ui {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: max(8px, env(safe-area-inset-top));
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+      z-index: 9;
+    }
+
+    .stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pill {
+      min-height: 30px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(255, 250, 239, 0.86);
+      border: 2px solid rgba(113, 77, 44, 0.12);
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 4px 10px rgba(111, 73, 34, 0.08);
+    }
+
+    .time-warning {
+      color: #e63946;
+      background: #ffe3a3;
+      font-size: 18px;
+      border-color: rgba(230, 57, 70, 0.28);
+      animation: pulse 0.55s infinite alternate;
+    }
+
+    .small-btn {
+      min-height: 38px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+    }
+
+    .room-wrap {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: max(68px, calc(env(safe-area-inset-top) + 62px));
+      bottom: max(10px, env(safe-area-inset-bottom));
+      min-height: 0;
+    }
+
+    .room {
+      position: relative;
+      width: 100%;
+      max-width: 440px;
+      height: 100%;
+      min-height: 0;
+      margin: 0 auto;
+      border: 12px solid #93643d;
+      border-radius: 18px;
+      overflow: hidden;
+      touch-action: none;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px) 0 0 / 42px 42px,
+        linear-gradient(0deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px) 0 0 / 42px 42px,
+        #f3c990;
+      box-shadow:
+        inset 0 0 0 5px rgba(255, 242, 211, 0.75),
+        inset 0 0 30px rgba(116, 70, 30, 0.18),
+        0 12px 28px rgba(90, 58, 24, 0.2);
+    }
+
+    .rug {
+      position: absolute;
+      left: 50%;
+      top: 56%;
+      width: 48%;
+      height: 26%;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: repeating-radial-gradient(circle, #f08a7d 0 12px, #ffd6a5 13px 24px);
+      opacity: 0.42;
+    }
+
+    .window,
+    .cabinet {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.72;
+    }
+
+    .window {
+      right: 18px;
+      top: 20px;
+      width: 76px;
+      height: 52px;
+      border: 6px solid #76b7d8;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #d8f3ff, #fff9c7);
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.55);
+    }
+
+    .window::before,
+    .window::after {
+      content: "";
+      position: absolute;
+      background: #76b7d8;
+    }
+
+    .window::before {
+      left: 50%;
+      top: 0;
+      width: 5px;
+      height: 100%;
+      transform: translateX(-50%);
+    }
+
+    .window::after {
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 5px;
+      transform: translateY(-50%);
+    }
+
+    .cabinet {
+      left: 18px;
+      top: 24px;
+      width: 68px;
+      height: 42px;
+      border-radius: 8px;
+      background: #be7b4b;
+      box-shadow: inset 0 -8px 0 rgba(73, 35, 17, 0.15);
+    }
+
+    .cabinet::before,
+    .cabinet::after {
+      content: "";
+      position: absolute;
+      top: 17px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ffe2a3;
+    }
+
+    .cabinet::before { left: 20px; }
+    .cabinet::after { right: 20px; }
+
+    .obstacles-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .obstacle {
+      position: absolute;
+      border-radius: 12px;
+      pointer-events: none;
+      box-shadow: 0 8px 14px rgba(83, 48, 20, 0.2), inset 0 4px 0 rgba(255, 255, 255, 0.22);
+      transform: translateZ(0);
+    }
+
+    .obstacle::before,
+    .obstacle::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .obstacle-sofa {
+      background: linear-gradient(180deg, #f08a7d 0%, #d95f57 100%);
+      border: 4px solid #9c453e;
+    }
+
+    .obstacle-sofa::before {
+      left: 8%;
+      right: 8%;
+      top: 8px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 232, 199, 0.32);
+    }
+
+    .obstacle-sofa::after {
+      left: 12%;
+      right: 12%;
+      bottom: -5px;
+      height: 9px;
+      border-radius: 0 0 10px 10px;
+      background: #8d3c36;
+    }
+
+    .obstacle-table {
+      background:
+        linear-gradient(90deg, rgba(255, 231, 183, 0.18) 1px, transparent 1px) 0 0 / 14px 14px,
+        linear-gradient(180deg, #c8844c 0%, #a76335 100%);
+      border: 4px solid #6f4224;
+      border-radius: 14px;
+    }
+
+    .obstacle-table::before {
+      inset: 9px;
+      border: 2px solid rgba(255, 237, 195, 0.36);
+      border-radius: 10px;
+    }
+
+    .obstacle-cabinet {
+      background: linear-gradient(180deg, #b87343 0%, #89512f 100%);
+      border: 4px solid #60351f;
+    }
+
+    .obstacle-cabinet::before {
+      left: 50%;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 999px;
+      background: rgba(74, 37, 18, 0.35);
+    }
+
+    .obstacle-cabinet::after {
+      left: 50%;
+      top: 50%;
+      width: 18px;
+      height: 7px;
+      border-radius: 999px;
+      background: #ffd89a;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 -24px 0 #ffd89a, 0 24px 0 #ffd89a;
+    }
+
+    .tunnels-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .tunnel {
+      position: absolute;
+      width: 52px;
+      height: 42px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(ellipse at center, #1f1a20 0 42%, #4a3b4d 43% 62%, #a46f54 63% 100%);
+      border: 3px solid rgba(87, 54, 38, 0.9);
+      box-shadow: 0 8px 14px rgba(48, 28, 20, 0.28), inset 0 4px 10px rgba(255, 224, 167, 0.18);
+      animation: tunnelBreath 1.8s ease-in-out infinite alternate;
+    }
+
+    .tunnel::after {
+      content: "秘密通道";
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      transform: translate(-50%, 2px);
+      min-width: 58px;
+      padding: 2px 5px;
+      border-radius: 999px;
+      background: rgba(255, 248, 225, 0.86);
+      color: #5b3927;
+      font-size: 10px;
+      font-weight: 800;
+      box-shadow: 0 3px 8px rgba(67, 39, 20, 0.16);
+    }
+
+    .items-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .item {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      font-size: 24px;
+      animation: itemFloat 1.2s ease-in-out infinite alternate;
+      filter: drop-shadow(0 6px 7px rgba(54, 32, 16, 0.25));
+    }
+
+    .item-speed-shoe {
+      background: radial-gradient(circle at 35% 28%, #fff7b0 0 28%, #4cc9f0 62%, #3a86ff 100%);
+      border: 3px solid rgba(255, 255, 255, 0.72);
+    }
+
+    .item-cheese {
+      background: radial-gradient(circle at 35% 28%, #fff7a1 0 24%, #ffd166 58%, #f77f00 100%);
+      border: 3px solid rgba(255, 255, 255, 0.72);
+      animation: itemFloat 1s ease-in-out infinite alternate, cheeseGlow 0.8s ease-in-out infinite alternate;
+    }
+
+    .sprite {
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      transform: translate3d(0, 0, 0) translate(-50%, -50%);
+      will-change: transform;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      transform-origin: center center;
+      z-index: 5;
+    }
+
+    .sprite::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      bottom: -6px;
+      width: 68%;
+      height: 18%;
+      border-radius: 50%;
+      background: rgba(80, 44, 20, 0.22);
+      filter: blur(2px);
+    }
+
+    .sprite img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-user-drag: none;
+      filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
+    }
+
+    .sprite-fallback {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+    }
+
+    .sprite.image-failed img {
+      display: none;
+    }
+
+    .sprite.image-failed .sprite-fallback {
+      display: grid;
+    }
+
+    .cat {
+      width: 56px;
+      height: 56px;
+      transition: filter 120ms ease;
+    }
+
+    .cat.dashing {
+      filter: drop-shadow(0 0 12px rgba(255, 214, 102, 0.82)) drop-shadow(-12px 7px 5px rgba(255, 159, 110, 0.34));
+    }
+
+    .cat.dashing::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 209, 102, 0.62);
+      animation: dashAura 0.22s ease-out infinite alternate;
+      pointer-events: none;
+    }
+
+    .cat.speed-boosted {
+      filter: drop-shadow(0 0 12px rgba(76, 201, 240, 0.75)) drop-shadow(-10px 7px 5px rgba(58, 134, 255, 0.25));
+    }
+
+    .cat-face {
+      position: relative;
+      width: 48px;
+      height: 44px;
+      border-radius: 50% 50% 46% 46%;
+      background: #f5a64f;
+      border: 3px solid #7f5126;
+      box-shadow: inset 0 -5px 0 rgba(111, 63, 25, 0.12);
+    }
+
+    .cat-ear {
+      position: absolute;
+      top: -13px;
+      width: 20px;
+      height: 22px;
+      background: #f5a64f;
+      border: 3px solid #7f5126;
+      transform: rotate(45deg);
+      border-radius: 4px;
+      z-index: -1;
+    }
+
+    .cat-ear.left { left: 4px; }
+    .cat-ear.right { right: 4px; }
+
+    .cat-ear::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border-radius: 3px;
+      background: #ffd1b6;
+    }
+
+    .cat-eye {
+      position: absolute;
+      top: 15px;
+      width: 6px;
+      height: 8px;
+      border-radius: 50%;
+      background: #372719;
+    }
+
+    .cat-eye.left { left: 13px; }
+    .cat-eye.right { right: 13px; }
+
+    .cat-nose {
+      position: absolute;
+      left: 50%;
+      top: 25px;
+      width: 8px;
+      height: 6px;
+      border-radius: 50% 50% 60% 60%;
+      background: #7f3f31;
+      transform: translateX(-50%);
+    }
+
+    .cat-whisker {
+      position: absolute;
+      top: 28px;
+      width: 17px;
+      height: 2px;
+      background: #7f5126;
+      border-radius: 999px;
+    }
+
+    .cat-whisker.left { left: -8px; }
+    .cat-whisker.right { right: -8px; }
+    .cat-whisker.left.top { transform: translateY(-5px) rotate(12deg); }
+    .cat-whisker.left.bottom { transform: translateY(5px) rotate(-12deg); }
+    .cat-whisker.right.top { transform: translateY(-5px) rotate(-12deg); }
+    .cat-whisker.right.bottom { transform: translateY(5px) rotate(12deg); }
+
+    .cat-tail {
+      position: absolute;
+      right: -5px;
+      bottom: 5px;
+      width: 24px;
+      height: 12px;
+      border: 4px solid #7f5126;
+      border-left: 0;
+      border-bottom: 0;
+      border-radius: 0 14px 0 0;
+      transform: rotate(35deg);
+      transform-origin: left center;
+    }
+
+    .mouse {
+      width: 40px;
+      height: 40px;
+      animation: mouseWiggle 0.33s infinite alternate ease-in-out;
+    }
+
+    .mouse-body {
+      position: relative;
+      width: 34px;
+      height: 28px;
+      border-radius: 50% 56% 52% 48%;
+      background: #b8a7a0;
+      border: 3px solid #675a55;
+      box-shadow: inset -4px -4px 0 rgba(79, 63, 57, 0.12);
+    }
+
+    .mouse-ear {
+      position: absolute;
+      top: -9px;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #b8a7a0;
+      border: 3px solid #675a55;
+      z-index: -1;
+    }
+
+    .mouse-ear.left { left: 3px; }
+    .mouse-ear.right { right: 4px; }
+
+    .mouse-ear::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: #f1b6bc;
+    }
+
+    .mouse-eye {
+      position: absolute;
+      top: 9px;
+      right: 10px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #2f2927;
+    }
+
+    .mouse-nose {
+      position: absolute;
+      top: 13px;
+      right: -6px;
+      width: 9px;
+      height: 7px;
+      border-radius: 50%;
+      background: #e06775;
+      border: 2px solid #675a55;
+    }
+
+    .mouse-tail {
+      position: absolute;
+      left: -17px;
+      bottom: 7px;
+      width: 22px;
+      height: 12px;
+      border-left: 3px solid #d88995;
+      border-bottom: 3px solid #d88995;
+      border-radius: 0 0 0 18px;
+      transform: rotate(12deg);
+    }
+
+    .mouse.sprinting {
+      filter: drop-shadow(-10px 8px 4px rgba(248, 112, 96, 0.34)) drop-shadow(0 8px 7px rgba(73, 43, 20, 0.24));
+      animation: mouseWiggle 0.18s infinite alternate ease-in-out;
+    }
+
+    .mouse.tunneling {
+      filter: drop-shadow(0 0 10px rgba(85, 60, 120, 0.35));
+    }
+
+    .mouse.protected {
+      animation: mouseProtect 0.16s steps(2, end) infinite;
+    }
+
+    .mouse.cheese-boosted {
+      filter: drop-shadow(0 0 12px rgba(255, 209, 102, 0.8)) drop-shadow(-10px 7px 5px rgba(247, 127, 0, 0.34));
+    }
+
+    .status-pop {
+      position: absolute;
+      left: 50%;
+      top: -24px;
+      min-width: 72px;
+      padding: 3px 6px;
+      border-radius: 999px;
+      transform: translateX(-50%);
+      background: rgba(255, 248, 225, 0.92);
+      color: #5b3927;
+      font-size: 11px;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(67, 39, 20, 0.16);
+      white-space: nowrap;
+    }
+
+    .particle-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 4;
+    }
+
+    .particle {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ffd166;
+      transform: translate(-50%, -50%);
+      animation: burst 800ms ease-out forwards;
+      will-change: transform, opacity;
+    }
+
+    .particle.star {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      clip-path: polygon(50% 0%, 62% 34%, 98% 35%, 69% 56%, 79% 91%, 50% 70%, 21% 91%, 31% 56%, 2% 35%, 38% 34%);
+    }
+
+    .joystick {
+      position: absolute;
+      left: 18px;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      width: 118px;
+      height: 118px;
+      z-index: 8;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.34);
+      border: 3px solid rgba(103, 70, 40, 0.18);
+      box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.45), 0 8px 20px rgba(82, 49, 22, 0.14);
+      touch-action: none;
+    }
+
+    .stick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: #ff9f6e;
+      border: 4px solid rgba(255, 255, 255, 0.65);
+      box-shadow: 0 6px 14px rgba(101, 57, 27, 0.22);
+    }
+
+    .dash-btn {
+      position: absolute;
+      right: 20px;
+      bottom: max(28px, calc(env(safe-area-inset-bottom) + 18px));
+      z-index: 9;
+      width: 78px;
+      height: 78px;
+      min-height: 78px;
+      padding: 0;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 35% 28%, #fff4ad 0 18%, #ffb84d 42%, #e56b3c 100%);
+      border: 4px solid rgba(255, 255, 255, 0.7);
+      color: #4d2716;
+      font-size: 16px;
+      font-weight: 900;
+      box-shadow: 0 7px 0 #b84d2b, 0 12px 22px rgba(96, 45, 20, 0.22);
+      touch-action: none;
+    }
+
+    .dash-btn.ready {
+      animation: dashReady 1s ease-in-out infinite alternate;
+    }
+
+    .dash-btn.cooldown,
+    .dash-btn.disabled {
+      background: #9d9187;
+      color: rgba(255, 255, 255, 0.82);
+      border-color: rgba(255, 255, 255, 0.36);
+      box-shadow: 0 5px 0 #655c57, 0 10px 18px rgba(67, 48, 38, 0.18);
+    }
+
+    .dash-btn.dashing {
+      background: radial-gradient(circle at 35% 28%, #ffffff 0 18%, #ffe66d 44%, #ff7b54 100%);
+    }
+
+    .dash-btn.hint {
+      animation: dashHint 0.18s ease-in-out 2;
+    }
+
+    .pause-screen {
+      align-items: center;
+      justify-content: center;
+      background: rgba(75, 45, 26, 0.28);
+      z-index: 20;
+    }
+
+    .modal {
+      width: min(92vw, 360px);
+      padding: 22px;
+      border-radius: 20px;
+      background: #fff9ee;
+      text-align: center;
+      box-shadow: 0 18px 42px rgba(49, 29, 13, 0.28);
+      border: 3px solid rgba(127, 85, 47, 0.18);
+    }
+
+    .tutorial-overlay,
+    .countdown-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      padding: 20px;
+      background: rgba(72, 44, 25, 0.34);
+    }
+
+    .tutorial-overlay.active,
+    .countdown-overlay.active {
+      display: flex;
+    }
+
+    .tutorial-card {
+      width: min(92vw, 380px);
+      padding: 22px;
+      border-radius: 22px;
+      background: #fff9ee;
+      border: 3px solid rgba(127, 85, 47, 0.18);
+      box-shadow: 0 18px 42px rgba(49, 29, 13, 0.28);
+      color: #553c2c;
+    }
+
+    .tutorial-card h2 {
+      margin: 0 0 12px;
+      color: #e56b3c;
+      text-align: center;
+      font-size: 28px;
+    }
+
+    .tutorial-card ol {
+      margin: 0 0 18px;
+      padding-left: 22px;
+      line-height: 1.65;
+      font-size: 15px;
+      text-align: left;
+    }
+
+    .countdown-text {
+      min-width: 180px;
+      text-align: center;
+      color: #fff4ad;
+      font-size: clamp(64px, 22vw, 118px);
+      font-weight: 1000;
+      text-shadow: 0 7px 0 #b84d2b, 0 12px 28px rgba(66, 31, 15, 0.35);
+      animation: countdownPop 0.6s ease-out;
+    }
+
+    .modal h2,
+    .end-screen h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+      color: #e56b3c;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @keyframes mouseWiggle {
+      from { rotate: -4deg; }
+      to { rotate: 4deg; }
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    @keyframes tunnelBreath {
+      from { scale: 0.96; filter: brightness(0.96); }
+      to { scale: 1.04; filter: brightness(1.08); }
+    }
+
+    @keyframes mouseProtect {
+      from { opacity: 0.48; }
+      to { opacity: 1; }
+    }
+
+    @keyframes dashAura {
+      from { opacity: 0.35; scale: 0.92; }
+      to { opacity: 0.78; scale: 1.08; }
+    }
+
+    @keyframes dashReady {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.12); }
+    }
+
+    @keyframes dashHint {
+      0%, 100% { transform: translateX(0); }
+      35% { transform: translateX(-4px); }
+      70% { transform: translateX(4px); }
+    }
+
+    @keyframes itemFloat {
+      from { translate: 0 -2px; }
+      to { translate: 0 4px; }
+    }
+
+    @keyframes cheeseGlow {
+      from { filter: drop-shadow(0 6px 7px rgba(54, 32, 16, 0.25)) brightness(1); }
+      to { filter: drop-shadow(0 0 10px rgba(255, 209, 102, 0.75)) brightness(1.12); }
+    }
+
+    @keyframes countdownPop {
+      0% { opacity: 0; scale: 0.55; }
+      55% { opacity: 1; scale: 1.16; }
+      100% { opacity: 1; scale: 1; }
+    }
+
+    @keyframes burst {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.7);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.55);
+      }
+    }
+
+    @media (max-height: 620px) {
+      .room-wrap {
+        top: max(62px, calc(env(safe-area-inset-top) + 58px));
+      }
+
+      .room {
+        border-width: 10px;
+      }
+
+      .joystick {
+        width: 102px;
+        height: 102px;
+      }
+
+      .dash-btn {
+        width: 66px;
+        height: 66px;
+        min-height: 66px;
+        font-size: 14px;
+      }
+
+      .stick {
+        width: 42px;
+        height: 42px;
+      }
+
+      .title {
+        font-size: 38px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <section class="screen menu-screen active" id="menuScreen">
+      <h1 class="title">姑姑抓天蓝</h1>
+      <p class="subtitle">拖动左下角摇杆控制姑姑，在时间结束前抓住天蓝。</p>
+      <div class="best-card" id="levelProgressCard">当前最高解锁关卡：第 1 关</div>
+      <div class="button-stack">
+        <button class="primary-btn" id="levelModeBtn">开始闯关</button>
+        <button class="secondary-btn" id="challengeModeBtn">自由挑战</button>
+        <button id="tutorialBtn">玩法说明</button>
+      </div>
+      <div class="difficulty-row" aria-label="难度选择">
+        <button class="difficulty-btn selected" data-difficulty="easy">简单</button>
+        <button class="difficulty-btn" data-difficulty="normal">普通</button>
+        <button class="difficulty-btn" data-difficulty="hard">困难</button>
+      </div>
+      <div class="best-card" id="bestCard">最佳成绩：暂无记录</div>
+      <div class="button-stack">
+        <button class="primary-btn" id="startBtn">开始自由挑战</button>
+      </div>
+    </section>
+
+    <section class="screen level-screen" id="levelScreen">
+      <h2 class="title">关卡选择</h2>
+      <div class="level-list" id="levelList"></div>
+      <div class="button-stack">
+        <button id="levelBackBtn">返回主菜单</button>
+      </div>
+    </section>
+
+    <section class="screen game-screen" id="gameScreen">
+      <div class="top-ui">
+        <div class="stat-row">
+          <div class="pill" id="timePill">时间 30</div>
+          <div class="pill" id="difficultyPill">普通</div>
+          <div class="pill" id="scorePill">分数 0</div>
+        </div>
+        <div class="stat-row">
+          <button class="small-btn secondary-btn" id="pauseBtn">暂停</button>
+          <button class="small-btn" id="menuBtn">菜单</button>
+        </div>
+      </div>
+      <div class="room-wrap">
+        <div class="room" id="room">
+          <div class="rug"></div>
+          <div class="window"></div>
+          <div class="obstacles-layer" id="obstaclesLayer"></div>
+          <div class="tunnels-layer" id="tunnelsLayer"></div>
+          <div class="items-layer" id="itemsLayer"></div>
+          <div class="particle-layer" id="particleLayer"></div>
+          <div id="cat" class="sprite cat" aria-label="姑姑">
+            <img src="assets/cat.png" alt="姑姑" draggable="false">
+            <div class="status-pop hidden" id="catStatus">姑姑加速！</div>
+            <div class="sprite-fallback" aria-hidden="true">
+              <div class="cat-tail"></div>
+              <div class="cat-face">
+                <div class="cat-ear left"></div>
+                <div class="cat-ear right"></div>
+                <div class="cat-eye left"></div>
+                <div class="cat-eye right"></div>
+                <div class="cat-nose"></div>
+                <div class="cat-whisker left top"></div>
+                <div class="cat-whisker left bottom"></div>
+                <div class="cat-whisker right top"></div>
+                <div class="cat-whisker right bottom"></div>
+              </div>
+            </div>
+          </div>
+          <div id="mouse" class="sprite mouse" aria-label="天蓝">
+            <img src="assets/mouse.png" alt="天蓝" draggable="false">
+            <div class="status-pop hidden" id="mouseStatus">天蓝加速！</div>
+            <div class="sprite-fallback" aria-hidden="true">
+              <div class="mouse-tail"></div>
+              <div class="mouse-body">
+                <div class="mouse-ear left"></div>
+                <div class="mouse-ear right"></div>
+                <div class="mouse-eye"></div>
+                <div class="mouse-nose"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="joystick" id="joystick" aria-hidden="true">
+        <div class="stick" id="stick"></div>
+      </div>
+      <button class="dash-btn disabled" id="dashBtn" type="button">冲刺</button>
+    </section>
+
+    <div class="countdown-overlay" id="countdownOverlay">
+      <div class="countdown-text" id="countdownText">3</div>
+    </div>
+
+    <div class="tutorial-overlay" id="tutorialOverlay">
+      <div class="tutorial-card">
+        <h2>玩法说明</h2>
+        <ol>
+          <li>🎮 左下角摇杆：控制姑姑移动。</li>
+          <li>⚡ 右下角冲刺：短时间加速，适合关键时刻追上天蓝。</li>
+          <li>🏃 天蓝会逃跑、闪避，还会利用障碍物。</li>
+          <li>🕳️ 后续关卡里，天蓝可能会钻进秘密通道，从另一个出口逃走。</li>
+          <li>🎯 目标是在时间结束前抓到天蓝。</li>
+        </ol>
+        <div class="button-stack">
+          <button class="primary-btn" id="tutorialCloseBtn">知道了，开始玩</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="screen pause-screen" id="pauseScreen">
+      <div class="modal">
+        <h2>暂停中</h2>
+        <div class="button-stack">
+          <button class="primary-btn" id="resumeBtn">继续游戏</button>
+          <button class="secondary-btn" id="restartPauseBtn">重新开始</button>
+          <button id="menuPauseBtn">返回主菜单</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen end-screen" id="endScreen">
+      <h2 id="endTitle">抓到天蓝了！</h2>
+      <div class="result-card" id="resultCard"></div>
+      <div class="button-stack">
+        <button class="primary-btn hidden" id="nextLevelBtn">下一关</button>
+        <button class="secondary-btn hidden" id="replayLevelBtn">重玩本关</button>
+        <button class="primary-btn" id="againBtn">再玩一次</button>
+        <button id="endMenuBtn">返回主菜单</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const difficulties = {
+      easy: { label: "简单", time: 35, catSpeed: 220, mouseSpeed: 130, alertDistance: 150, catchDistance: 32, multiplier: 1.0, obstacleCount: 3, tunnelsEnabled: true, catDashEnabled: true, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: false, speedShoeSpawnRange: [4, 6], cheeseSpawnRange: [10, 14], mouseCheeseAwareness: 0, predictionTime: 0.25, sprintMultiplier: 1.45, sprintDuration: 0.75, sprintCooldown: 2.4, tunnelCooldown: 8, tunnelProtection: 0.35, tunnelChance: 0.45, tunnelDangerMin: 0.62, tunnelTriggerRatio: 0.75, catDashDuration: 0.65, catDashMultiplier: 1.8, catDashCooldown: 4.0 },
+      normal: { label: "普通", time: 28, catSpeed: 230, mouseSpeed: 165, alertDistance: 175, catchDistance: 28, multiplier: 1.3, obstacleCount: 3, tunnelsEnabled: true, catDashEnabled: true, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: true, speedShoeSpawnRange: [4, 6], cheeseSpawnRange: [7, 10], mouseCheeseAwareness: 0.65, predictionTime: 0.35, sprintMultiplier: 1.55, sprintDuration: 0.85, sprintCooldown: 2.0, tunnelCooldown: 6, tunnelProtection: 0.5, tunnelChance: 0.9, tunnelDangerMin: 0.36, tunnelTriggerRatio: 0.75, catDashDuration: 0.55, catDashMultiplier: 1.75, catDashCooldown: 5.0 },
+      hard: { label: "困难", time: 22, catSpeed: 240, mouseSpeed: 195, alertDistance: 200, catchDistance: 25, multiplier: 1.6, obstacleCount: 3, tunnelsEnabled: true, catDashEnabled: true, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: true, speedShoeSpawnRange: [6, 8], cheeseSpawnRange: [7, 10], mouseCheeseAwareness: 0.9, predictionTime: 0.45, sprintMultiplier: 1.70, sprintDuration: 0.95, sprintCooldown: 1.6, tunnelCooldown: 4.5, tunnelProtection: 0.65, tunnelChance: 1.35, tunnelDangerMin: 0.18, tunnelTriggerRatio: 0.82, catDashDuration: 0.45, catDashMultiplier: 1.65, catDashCooldown: 6.0 }
+    };
+
+    const levels = [
+      { id: 1, name: "初次追逐", time: 40, catSpeed: 220, mouseSpeed: 115, alertDistance: 130, catchDistance: 34, multiplier: 1.0, obstacleCount: 1, tunnelsEnabled: false, catDashEnabled: false, mouseDodgeEnabled: false, itemsEnabled: false, speedShoeEnabled: false, cheeseEnabled: false, speedShoeSpawnRange: [4, 6], cheeseSpawnRange: [7, 10], mouseCheeseAwareness: 0, predictionTime: 0.2, sprintMultiplier: 1.35, sprintDuration: 0.65, sprintCooldown: 2.8, tunnelCooldown: 9, tunnelProtection: 0.3, tunnelChance: 0, tunnelDangerMin: 1, tunnelTriggerRatio: 0.75, catDashDuration: 0.65, catDashMultiplier: 1.8, catDashCooldown: 4.0 },
+      { id: 2, name: "家具房间", time: 35, catSpeed: 225, mouseSpeed: 135, alertDistance: 145, catchDistance: 32, multiplier: 1.15, obstacleCount: 2, tunnelsEnabled: false, catDashEnabled: false, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: false, speedShoeSpawnRange: [4, 6], cheeseSpawnRange: [7, 10], mouseCheeseAwareness: 0, predictionTime: 0.24, sprintMultiplier: 1.4, sprintDuration: 0.7, sprintCooldown: 2.5, tunnelCooldown: 8, tunnelProtection: 0.35, tunnelChance: 0, tunnelDangerMin: 1, tunnelTriggerRatio: 0.75, catDashDuration: 0.6, catDashMultiplier: 1.75, catDashCooldown: 4.5 },
+      { id: 3, name: "调皮天蓝", time: 32, catSpeed: 230, mouseSpeed: 155, alertDistance: 165, catchDistance: 30, multiplier: 1.3, obstacleCount: 3, tunnelsEnabled: false, catDashEnabled: true, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: true, speedShoeSpawnRange: [4, 6], cheeseSpawnRange: [7, 10], mouseCheeseAwareness: 0.5, predictionTime: 0.34, sprintMultiplier: 1.5, sprintDuration: 0.8, sprintCooldown: 2.2, tunnelCooldown: 7, tunnelProtection: 0.45, tunnelChance: 0, tunnelDangerMin: 1, tunnelTriggerRatio: 0.75, catDashDuration: 0.55, catDashMultiplier: 1.75, catDashCooldown: 5.0 },
+      { id: 4, name: "秘密通道", time: 30, catSpeed: 235, mouseSpeed: 170, alertDistance: 180, catchDistance: 28, multiplier: 1.5, obstacleCount: 3, tunnelsEnabled: true, catDashEnabled: true, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: true, speedShoeSpawnRange: [4, 6], cheeseSpawnRange: [7, 10], mouseCheeseAwareness: 0.7, predictionTime: 0.4, sprintMultiplier: 1.58, sprintDuration: 0.85, sprintCooldown: 1.9, tunnelCooldown: 6, tunnelProtection: 0.5, tunnelChance: 0.95, tunnelDangerMin: 0.32, tunnelTriggerRatio: 0.78, catDashDuration: 0.5, catDashMultiplier: 1.7, catDashCooldown: 5.4 },
+      { id: 5, name: "终极追逐", time: 25, catSpeed: 240, mouseSpeed: 190, alertDistance: 200, catchDistance: 25, multiplier: 1.8, obstacleCount: 4, tunnelsEnabled: true, catDashEnabled: true, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: true, speedShoeSpawnRange: [3.5, 5.5], cheeseSpawnRange: [6, 9], mouseCheeseAwareness: 0.95, predictionTime: 0.5, sprintMultiplier: 1.7, sprintDuration: 0.95, sprintCooldown: 1.55, tunnelCooldown: 4.5, tunnelProtection: 0.65, tunnelChance: 1.35, tunnelDangerMin: 0.18, tunnelTriggerRatio: 0.82, catDashDuration: 0.45, catDashMultiplier: 1.65, catDashCooldown: 6.0 }
+    ];
+
+    const screens = {
+      menu: document.getElementById("menuScreen"),
+      level: document.getElementById("levelScreen"),
+      game: document.getElementById("gameScreen"),
+      pause: document.getElementById("pauseScreen"),
+      end: document.getElementById("endScreen")
+    };
+
+    const room = document.getElementById("room");
+    const catEl = document.getElementById("cat");
+    const mouseEl = document.getElementById("mouse");
+    const joystick = document.getElementById("joystick");
+    const stick = document.getElementById("stick");
+    const dashBtn = document.getElementById("dashBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const timePill = document.getElementById("timePill");
+    const difficultyPill = document.getElementById("difficultyPill");
+    const scorePill = document.getElementById("scorePill");
+    const bestCard = document.getElementById("bestCard");
+    const levelProgressCard = document.getElementById("levelProgressCard");
+    const levelList = document.getElementById("levelList");
+    const endTitle = document.getElementById("endTitle");
+    const resultCard = document.getElementById("resultCard");
+    const nextLevelBtn = document.getElementById("nextLevelBtn");
+    const replayLevelBtn = document.getElementById("replayLevelBtn");
+    const againBtn = document.getElementById("againBtn");
+    const obstaclesLayer = document.getElementById("obstaclesLayer");
+    const tunnelsLayer = document.getElementById("tunnelsLayer");
+    const itemsLayer = document.getElementById("itemsLayer");
+    const particleLayer = document.getElementById("particleLayer");
+    const catStatus = document.getElementById("catStatus");
+    const mouseStatus = document.getElementById("mouseStatus");
+    const countdownOverlay = document.getElementById("countdownOverlay");
+    const countdownText = document.getElementById("countdownText");
+    const tutorialOverlay = document.getElementById("tutorialOverlay");
+
+    const state = {
+      screen: "menu",
+      gameState: "menu",
+      gameMode: "challenge",
+      selectedDifficulty: "easy",
+      currentLevelIndex: 0,
+      campaignRun: false,
+      runTotalScore: 0,
+      runTotalTime: 0,
+      runStars: 0,
+      runRatings: [],
+      levelProgress: null,
+      config: difficulties.easy,
+      running: false,
+      paused: false,
+      finished: false,
+      rafId: null,
+      endTimer: null,
+      lastTime: 0,
+      lastDashTouchTime: 0,
+      countdownTimer: null,
+      countdownToken: 0,
+      countdownActive: false,
+      tutorialReturnState: "menu",
+      elapsed: 0,
+      timeLeft: 40,
+      score: 0,
+      lastBeepSecond: null,
+      roomWidth: 0,
+      roomHeight: 0,
+      cat: { x: 0, y: 0, size: 56, vx: 0, vy: 0, acceleration: 1500, friction: 10, facing: 1, angle: 0, isDashing: false, dashTimer: 0, dashCooldownTimer: 0, dashReady: true, lastMoveDirX: 1, lastMoveDirY: 0, speedBoostTimer: 0 },
+      mouse: { x: 0, y: 0, size: 40, vx: 0, vy: 0, wanderTimer: 0, dirX: -1, dirY: 0, sprintTimer: 0, sprintCooldown: 0, sprinting: false, dodgeTimer: 0, dodgeCooldown: 0, dodgeX: 0, dodgeY: 0, dangerMeter: 0, blockedCount: 0, stuckTimer: 0, lastX: 0, lastY: 0, tunnelCooldown: 0, protectionTimer: 0, tunneling: false, tunnelTimer: 0, tunnelDuration: 0, tunnelFrom: null, tunnelTo: null, tunnelStartX: 0, tunnelStartY: 0, tunnelExitX: 0, tunnelExitY: 0, tunnelScale: 1, tunnelOpacity: 1, cheeseBoostTimer: 0, recentlyAteCheeseTimer: 0 },
+      obstacles: [],
+      tunnels: [],
+      items: {
+        speedShoe: { active: false, x: 0, y: 0, spawnTimer: 0 },
+        cheese: { active: false, x: 0, y: 0, spawnTimer: 0 }
+      },
+      input: { active: false, id: null, x: 0, y: 0, power: 0 }
+    };
+
+    let audioContext = null;
+
+    function showScreen(name) {
+      Object.values(screens).forEach(screen => screen.classList.remove("active"));
+      screens[name].classList.add("active");
+      state.screen = name;
+      if (name === "menu") state.gameState = "menu";
+      if (name === "level") state.gameState = "levelSelect";
+      updateDashButton();
+    }
+
+    function getCurrentConfig() {
+      return state.gameMode === "level" ? levels[state.currentLevelIndex] : difficulties[state.selectedDifficulty];
+    }
+
+    function initGame() {
+      bindSpriteFallbacks();
+      bindButtons();
+      bindJoystick();
+      loadLevelProgress();
+      loadBestScore();
+      preventMobileGestures();
+      selectDifficulty("easy");
+      showTutorialIfNeeded();
+    }
+
+    function bindSpriteFallbacks() {
+      document.querySelectorAll(".sprite img").forEach(img => {
+        img.addEventListener("load", () => {
+          img.parentElement.classList.remove("image-failed");
+        });
+        img.addEventListener("error", () => {
+          img.parentElement.classList.add("image-failed");
+          console.warn(`角色图片加载失败：${img.getAttribute("src")}`);
+        });
+        if (img.complete && img.naturalWidth === 0) {
+          img.parentElement.classList.add("image-failed");
+        }
+      });
+    }
+
+    function showTutorialIfNeeded() {
+      if (localStorage.getItem("gugu_tianlan_tutorial_seen") === "1") return;
+      showTutorial();
+    }
+
+    function showTutorial() {
+      state.tutorialReturnState = state.gameState;
+      state.gameState = "tutorial";
+      tutorialOverlay.classList.add("active");
+    }
+
+    function closeTutorial() {
+      localStorage.setItem("gugu_tianlan_tutorial_seen", "1");
+      tutorialOverlay.classList.remove("active");
+      state.gameState = state.screen === "menu" ? "menu" : state.tutorialReturnState;
+      if (state.screen !== "menu" && state.tutorialReturnState === "menu") returnToMenu();
+    }
+
+    function bindButtons() {
+      document.querySelectorAll(".difficulty-btn").forEach(button => {
+        button.addEventListener("click", () => {
+          userFeedback("click");
+          selectDifficulty(button.dataset.difficulty);
+        });
+      });
+
+      document.getElementById("startBtn").addEventListener("click", () => {
+        userFeedback("start");
+        startChallengeGame();
+      });
+      document.getElementById("challengeModeBtn").addEventListener("click", () => {
+        userFeedback("click");
+        state.gameMode = "challenge";
+        loadBestScore();
+      });
+      document.getElementById("levelModeBtn").addEventListener("click", () => {
+        userFeedback("click");
+        showLevelSelect();
+      });
+      document.getElementById("levelBackBtn").addEventListener("click", () => {
+        userFeedback("click");
+        returnToMenu();
+      });
+      document.getElementById("tutorialBtn").addEventListener("click", () => {
+        userFeedback("click");
+        showTutorial();
+      });
+      document.getElementById("tutorialCloseBtn").addEventListener("click", () => {
+        userFeedback("click");
+        closeTutorial();
+      });
+      document.getElementById("pauseBtn").addEventListener("click", () => {
+        userFeedback("click");
+        pauseGame();
+      });
+      document.getElementById("menuBtn").addEventListener("click", () => {
+        userFeedback("click");
+        returnToMenu();
+      });
+      document.getElementById("resumeBtn").addEventListener("click", () => {
+        userFeedback("click");
+        resumeGame();
+      });
+      document.getElementById("restartPauseBtn").addEventListener("click", () => {
+        userFeedback("start");
+        restartGame();
+      });
+      document.getElementById("menuPauseBtn").addEventListener("click", () => {
+        userFeedback("click");
+        returnToMenu();
+      });
+      againBtn.addEventListener("click", () => {
+        userFeedback("start");
+        if (state.gameMode === "level") startLevelGame(0, true);
+        else restartGame();
+      });
+      nextLevelBtn.addEventListener("click", () => {
+        userFeedback("start");
+        startLevelGame(state.currentLevelIndex + 1, state.campaignRun);
+      });
+      replayLevelBtn.addEventListener("click", () => {
+        userFeedback("start");
+        startLevelGame(state.currentLevelIndex, state.campaignRun);
+      });
+      document.getElementById("endMenuBtn").addEventListener("click", () => {
+        userFeedback("click");
+        returnToMenu();
+      });
+      dashBtn.addEventListener("click", event => {
+        event.preventDefault();
+        if (Date.now() - state.lastDashTouchTime < 450) return;
+        triggerCatDash();
+      });
+      dashBtn.addEventListener("touchstart", event => {
+        event.preventDefault();
+        state.lastDashTouchTime = Date.now();
+        triggerCatDash();
+      }, { passive: false });
+    }
+
+    function preventMobileGestures() {
+      document.addEventListener("touchmove", event => event.preventDefault(), { passive: false });
+      let lastTouchEnd = 0;
+      document.addEventListener("touchend", event => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) event.preventDefault();
+        lastTouchEnd = now;
+      }, { passive: false });
+    }
+
+    function bindJoystick() {
+      joystick.addEventListener("touchstart", handleStickStart, { passive: false });
+      joystick.addEventListener("touchmove", handleStickMove, { passive: false });
+      joystick.addEventListener("touchend", handleStickEnd, { passive: false });
+      joystick.addEventListener("touchcancel", handleStickEnd, { passive: false });
+      joystick.addEventListener("mousedown", handleStickStart);
+      window.addEventListener("mousemove", handleStickMove);
+      window.addEventListener("mouseup", handleStickEnd);
+    }
+
+    function getPoint(event) {
+      if (event.changedTouches && event.changedTouches.length) {
+        const touch = state.input.id === null
+          ? event.changedTouches[0]
+          : Array.from(event.changedTouches).find(item => item.identifier === state.input.id) || event.changedTouches[0];
+        return { x: touch.clientX, y: touch.clientY, id: touch.identifier };
+      }
+      return { x: event.clientX, y: event.clientY, id: "mouse" };
+    }
+
+    function handleStickStart(event) {
+      event.preventDefault();
+      if (!state.running || state.paused || state.finished) return;
+      if (state.input.active) return;
+      const point = getPoint(event);
+      state.input.active = true;
+      state.input.id = point.id;
+      updateJoystick(point.x, point.y);
+    }
+
+    function handleStickMove(event) {
+      if (!state.input.active) return;
+      event.preventDefault();
+      if (!state.running || state.paused || state.finished) {
+        resetJoystick();
+        return;
+      }
+      const point = getPoint(event);
+      updateJoystick(point.x, point.y);
+    }
+
+    function handleStickEnd(event) {
+      if (!state.input.active) return;
+      event.preventDefault();
+      if (event.changedTouches && !Array.from(event.changedTouches).some(item => item.identifier === state.input.id)) return;
+      state.input.active = false;
+      state.input.id = null;
+      state.input.x = 0;
+      state.input.y = 0;
+      state.input.power = 0;
+      stick.style.transform = "translate(-50%, -50%)";
+    }
+
+    function updateJoystick(clientX, clientY) {
+      const rect = joystick.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const max = rect.width * 0.32;
+      let dx = clientX - centerX;
+      let dy = clientY - centerY;
+      const len = Math.hypot(dx, dy) || 1;
+      const limited = Math.min(len, max);
+      dx = dx / len * limited;
+      dy = dy / len * limited;
+      state.input.x = dx / max;
+      state.input.y = dy / max;
+      state.input.power = Math.min(1, len / max);
+      stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    }
+
+    function selectDifficulty(key) {
+      state.gameMode = "challenge";
+      state.selectedDifficulty = key;
+      state.config = difficulties[key];
+      resetCatDash();
+      document.querySelectorAll(".difficulty-btn").forEach(button => {
+        button.classList.toggle("selected", button.dataset.difficulty === key);
+      });
+      loadBestScore();
+      updateDashButton();
+    }
+
+    function startChallengeGame() {
+      state.gameMode = "challenge";
+      state.config = difficulties[state.selectedDifficulty];
+      state.campaignRun = false;
+      state.runTotalScore = 0;
+      state.runTotalTime = 0;
+      state.runStars = 0;
+      state.runRatings = [];
+      startGame();
+    }
+
+    function showLevelSelect() {
+      renderLevelList();
+      showScreen("level");
+    }
+
+    function startLevelGame(index, campaignRun) {
+      state.gameMode = "level";
+      state.currentLevelIndex = clamp(index, 0, levels.length - 1);
+      state.campaignRun = Boolean(campaignRun);
+      if (state.currentLevelIndex === 0 && state.campaignRun) {
+        state.runTotalScore = 0;
+        state.runTotalTime = 0;
+        state.runStars = 0;
+        state.runRatings = [];
+      }
+      state.config = levels[state.currentLevelIndex];
+      startGame();
+    }
+
+    function startGame() {
+      state.config = getCurrentConfig();
+      showScreen("game");
+      setupRound();
+      state.paused = false;
+      state.finished = false;
+      cancelAnimationFrame(state.rafId);
+      state.running = false;
+      startOpeningCountdown();
+      render();
+    }
+
+    function startOpeningCountdown() {
+      clearOpeningCountdown();
+      state.gameState = "countdown";
+      state.countdownActive = true;
+      state.countdownToken += 1;
+      const token = state.countdownToken;
+      const steps = ["3", "2", "1", "开始！"];
+      countdownOverlay.classList.add("active");
+      pauseBtn.disabled = true;
+
+      const showStep = index => {
+        if (token !== state.countdownToken || state.screen !== "game" || state.finished) return;
+        countdownText.textContent = steps[index];
+        countdownText.style.animation = "none";
+        void countdownText.offsetWidth;
+        countdownText.style.animation = "countdownPop 0.6s ease-out";
+        playSound(index < 3 ? "tick" : "start");
+        if (index < steps.length - 1) {
+          state.countdownTimer = window.setTimeout(() => showStep(index + 1), 760);
+        } else {
+          state.countdownTimer = window.setTimeout(() => finishOpeningCountdown(token), 620);
+        }
+      };
+      showStep(0);
+      updateDashButton();
+    }
+
+    function finishOpeningCountdown(token) {
+      if (token !== state.countdownToken || state.screen !== "game" || state.finished) return;
+      countdownOverlay.classList.remove("active");
+      pauseBtn.disabled = false;
+      state.countdownActive = false;
+      state.gameState = "playing";
+      state.running = true;
+      state.lastTime = performance.now();
+      cancelAnimationFrame(state.rafId);
+      state.rafId = requestAnimationFrame(gameLoop);
+      updateDashButton();
+    }
+
+    function clearOpeningCountdown() {
+      state.countdownToken += 1;
+      clearTimeout(state.countdownTimer);
+      state.countdownTimer = null;
+      state.countdownActive = false;
+      countdownOverlay.classList.remove("active");
+      pauseBtn.disabled = false;
+    }
+
+    function setupRound() {
+      measureRoom();
+      const cfg = state.config;
+      state.elapsed = 0;
+      state.timeLeft = cfg.time;
+      state.score = 0;
+      state.lastBeepSecond = null;
+      clearTimeout(state.endTimer);
+      state.cat.size = 56;
+      state.mouse.size = 40;
+      createObstacles();
+      createTunnels();
+      const catSpawn = getSafeSpawnPosition(state.cat.size / 2, "cat");
+      state.cat.x = catSpawn.x;
+      state.cat.y = catSpawn.y;
+      state.cat.vx = 0;
+      state.cat.vy = 0;
+      state.cat.angle = 0;
+      resetCatDash();
+      resetItems();
+      randomizeMousePosition();
+      setWanderDirection();
+      state.mouse.wanderTimer = 0.4;
+      state.mouse.sprintTimer = 0;
+      state.mouse.sprintCooldown = 0;
+      state.mouse.sprinting = false;
+      state.mouse.dodgeTimer = 0;
+      state.mouse.dodgeCooldown = 0.7;
+      state.mouse.dodgeX = 0;
+      state.mouse.dodgeY = 0;
+      state.mouse.dangerMeter = 0;
+      state.mouse.blockedCount = 0;
+      state.mouse.stuckTimer = 0;
+      resetTunnelState();
+      state.mouse.lastX = state.mouse.x;
+      state.mouse.lastY = state.mouse.y;
+      mouseEl.classList.remove("sprinting");
+      mouseEl.style.animationPlayState = "running";
+      particleLayer.innerHTML = "";
+      difficultyPill.textContent = state.gameMode === "level" ? currentLevelLabel() : cfg.label;
+      updateDashButton();
+      renderItems();
+    }
+
+    function resetCatDash() {
+      state.cat.isDashing = false;
+      state.cat.dashTimer = 0;
+      state.cat.dashCooldownTimer = 0;
+      state.cat.dashReady = true;
+      state.cat.lastMoveDirX = 1;
+      state.cat.lastMoveDirY = 0;
+      state.cat.speedBoostTimer = 0;
+      catEl.classList.remove("dashing");
+      catEl.classList.remove("speed-boosted");
+      catStatus.classList.add("hidden");
+    }
+
+    function resetItems() {
+      state.items.speedShoe.active = false;
+      state.items.cheese.active = false;
+      state.items.speedShoe.spawnTimer = state.config.itemsEnabled && state.config.speedShoeEnabled ? randomRange(...state.config.speedShoeSpawnRange) : Infinity;
+      state.items.cheese.spawnTimer = state.config.itemsEnabled && state.config.cheeseEnabled ? randomRange(...state.config.cheeseSpawnRange) : Infinity;
+      state.mouse.cheeseBoostTimer = 0;
+      state.mouse.recentlyAteCheeseTimer = 0;
+      mouseEl.classList.remove("cheese-boosted");
+      mouseStatus.classList.add("hidden");
+      itemsLayer.innerHTML = "";
+    }
+
+    function resetTunnelState() {
+      state.mouse.tunnelCooldown = 1.2;
+      state.mouse.protectionTimer = 0;
+      state.mouse.tunneling = false;
+      state.mouse.tunnelTimer = 0;
+      state.mouse.tunnelDuration = 0;
+      state.mouse.tunnelFrom = null;
+      state.mouse.tunnelTo = null;
+      state.mouse.tunnelScale = 1;
+      state.mouse.tunnelOpacity = 1;
+      mouseEl.classList.remove("tunneling", "protected");
+      mouseEl.style.opacity = "";
+    }
+
+    function measureRoom() {
+      state.roomWidth = Math.max(1, room.clientWidth);
+      state.roomHeight = Math.max(1, room.clientHeight);
+    }
+
+    function createObstacles() {
+      const count = state.config.obstacleCount ?? 3;
+      const scale = clamp(Math.min(state.roomWidth / 360, state.roomHeight / 560), 0.72, 1);
+      const sofaW = clamp(state.roomWidth * 0.38, 108, 164);
+      const sofaH = 44 * scale;
+      const tableW = 76 * scale;
+      const tableH = 62 * scale;
+      const cabinetW = 64 * scale;
+      const cabinetH = 86 * scale;
+      const allObstacles = [
+        makeObstacle("sofa", state.roomWidth * 0.50, state.roomHeight * 0.28, sofaW, sofaH),
+        makeObstacle("table", state.roomWidth * 0.73, state.roomHeight * 0.57, tableW, tableH),
+        makeObstacle("cabinet", state.roomWidth * 0.31, state.roomHeight * 0.68, cabinetW, cabinetH),
+        makeObstacle("table", state.roomWidth * 0.56, state.roomHeight * 0.82, tableW * 0.82, tableH * 0.8)
+      ];
+      state.obstacles = allObstacles.slice(0, count);
+      renderObstacles();
+    }
+
+    function makeObstacle(type, centerX, centerY, width, height) {
+      const pad = 12;
+      const w = Math.min(width, state.roomWidth - pad * 2);
+      const h = Math.min(height, state.roomHeight - pad * 2);
+      return {
+        type,
+        x: clamp(centerX - w / 2, pad, state.roomWidth - w - pad),
+        y: clamp(centerY - h / 2, pad, state.roomHeight - h - pad),
+        w,
+        h
+      };
+    }
+
+    function renderObstacles() {
+      obstaclesLayer.innerHTML = "";
+      state.obstacles.forEach(obstacle => {
+        const el = document.createElement("div");
+        el.className = `obstacle obstacle-${obstacle.type}`;
+        el.style.left = `${obstacle.x}px`;
+        el.style.top = `${obstacle.y}px`;
+        el.style.width = `${obstacle.w}px`;
+        el.style.height = `${obstacle.h}px`;
+        obstaclesLayer.appendChild(el);
+      });
+    }
+
+    function loadLevelProgress() {
+      const saved = JSON.parse(localStorage.getItem("guguLevelProgress") || "null");
+      state.levelProgress = saved || {
+        highestUnlockedLevel: 1,
+        bestLevelReached: 1,
+        bestTotalScore: 0,
+        levelBest: {}
+      };
+      state.levelProgress.levelBest = state.levelProgress.levelBest || {};
+      state.levelProgress.highestUnlockedLevel = clamp(state.levelProgress.highestUnlockedLevel || 1, 1, levels.length);
+      updateLevelProgressCard();
+      return state.levelProgress;
+    }
+
+    function saveLevelProgress() {
+      localStorage.setItem("guguLevelProgress", JSON.stringify(state.levelProgress));
+      updateLevelProgressCard();
+    }
+
+    function getTotalStars() {
+      if (!state.levelProgress) return 0;
+      return levels.reduce((sum, level) => {
+        const best = state.levelProgress.levelBest[level.id];
+        return sum + (best ? best.stars || 0 : 0);
+      }, 0);
+    }
+
+    function getLevelStars() {
+      const ratio = state.timeLeft / state.config.time;
+      if (ratio >= 0.5) return 3;
+      if (ratio >= 0.25) return 2;
+      return state.timeLeft > 0 ? 1 : 0;
+    }
+
+    function formatStars(stars) {
+      return "★".repeat(stars) + "☆".repeat(3 - stars);
+    }
+
+    function updateLevelProgressCard() {
+      if (!state.levelProgress) return;
+      levelProgressCard.textContent = `当前最高解锁关卡：第 ${state.levelProgress.highestUnlockedLevel} 关｜总星级：${getTotalStars()} / ${levels.length * 3}｜最佳总分：${state.levelProgress.bestTotalScore || 0}`;
+    }
+
+    function renderLevelList() {
+      loadLevelProgress();
+      levelList.innerHTML = "";
+      levels.forEach((level, index) => {
+        const unlocked = level.id <= state.levelProgress.highestUnlockedLevel;
+        const best = state.levelProgress.levelBest[level.id];
+        const button = document.createElement("button");
+        button.className = `level-card ${unlocked ? "" : "locked"}`;
+        button.disabled = !unlocked;
+        button.innerHTML = unlocked ? `
+          <strong>第 ${level.id} 关：${level.name}</strong>
+          <span class="stars">${formatStars(best ? best.stars || 0 : 0)}</span>
+          <span>${best ? "已通关" : "已解锁"}｜最佳分数：${best ? best.score : "暂无"}｜最快时间：${best ? best.fastest.toFixed(1) + "s" : "暂无"}</span>
+        ` : `
+          <strong>第 ${level.id} 关：${level.name}</strong>
+          <span>🔒 未解锁</span>
+        `;
+        button.addEventListener("click", () => {
+          if (!unlocked) return;
+          userFeedback("start");
+          startLevelGame(index, index === 0);
+        });
+        levelList.appendChild(button);
+      });
+    }
+
+    function createTunnels() {
+      if (!state.config.tunnelsEnabled) {
+        state.tunnels = [];
+        tunnelsLayer.innerHTML = "";
+        return;
+      }
+      const radius = clamp(Math.min(state.roomWidth, state.roomHeight) * 0.07, 22, 28);
+      state.tunnels = [
+        makeTunnel("a", state.roomWidth * 0.18, state.roomHeight * 0.22, radius),
+        makeTunnel("b", state.roomWidth * 0.82, state.roomHeight * 0.78, radius)
+      ];
+      renderTunnels();
+    }
+
+    function makeTunnel(id, preferredX, preferredY, radius) {
+      const margin = radius + 18;
+      const candidates = [{ x: preferredX, y: preferredY }];
+      for (let ring = 1; ring <= 4; ring += 1) {
+        const spread = ring * 22;
+        for (let i = 0; i < 8; i += 1) {
+          const angle = i / 8 * Math.PI * 2;
+          candidates.push({ x: preferredX + Math.cos(angle) * spread, y: preferredY + Math.sin(angle) * spread });
+        }
+      }
+      const point = candidates.find(candidate => isTunnelPositionSafe(candidate.x, candidate.y, radius)) || { x: preferredX, y: preferredY };
+      return {
+        id,
+        x: clamp(point.x, margin, state.roomWidth - margin),
+        y: clamp(point.y, margin, state.roomHeight - margin),
+        radius
+      };
+    }
+
+    function isTunnelPositionSafe(x, y, radius) {
+      const margin = radius + 14;
+      if (x < margin || y < margin || x > state.roomWidth - margin || y > state.roomHeight - margin) return false;
+      return !state.obstacles.some(rect => circleRectCollision({ x, y, radius: radius + 8 }, rect));
+    }
+
+    function renderTunnels() {
+      tunnelsLayer.innerHTML = "";
+      state.tunnels.forEach(tunnel => {
+        const el = document.createElement("div");
+        el.className = `tunnel tunnel-${tunnel.id}`;
+        const width = tunnel.radius * 2;
+        el.style.left = `${tunnel.x}px`;
+        el.style.top = `${tunnel.y}px`;
+        el.style.width = `${width}px`;
+        el.style.height = `${Math.round(width * 0.78)}px`;
+        tunnelsLayer.appendChild(el);
+      });
+    }
+
+    function renderItems() {
+      itemsLayer.innerHTML = "";
+      if (state.items.speedShoe.active) {
+        itemsLayer.appendChild(createItemElement("speedShoe", "item-speed-shoe", "👟"));
+      }
+      if (state.items.cheese.active) {
+        itemsLayer.appendChild(createItemElement("cheese", "item-cheese", "🧀⚡"));
+      }
+    }
+
+    function createItemElement(type, className, text) {
+      const item = state.items[type];
+      const el = document.createElement("div");
+      el.className = `item ${className}`;
+      el.textContent = text;
+      el.style.left = `${item.x}px`;
+      el.style.top = `${item.y}px`;
+      return el;
+    }
+
+    function getRandomSafeItemPosition(radius, options = {}) {
+      for (let i = 0; i < 80; i += 1) {
+        const x = randomRange(radius + 20, state.roomWidth - radius - 20);
+        const y = randomRange(radius + 20, state.roomHeight - radius - 20);
+        if (isItemPositionSafe(x, y, radius, options.type)) return { x, y };
+      }
+      const fallback = [
+        { x: state.roomWidth * 0.5, y: state.roomHeight * 0.18 },
+        { x: state.roomWidth * 0.18, y: state.roomHeight * 0.5 },
+        { x: state.roomWidth * 0.82, y: state.roomHeight * 0.5 },
+        { x: state.roomWidth * 0.5, y: state.roomHeight * 0.82 }
+      ].find(point => isItemPositionSafe(point.x, point.y, radius, options.type));
+      return fallback || { x: state.roomWidth / 2, y: state.roomHeight / 2 };
+    }
+
+    function isItemPositionSafe(x, y, radius, type) {
+      if (isPositionBlocked(x, y, radius)) return false;
+      if (state.tunnels.some(tunnel => distance({ x, y }, tunnel) < tunnel.radius + radius + 10)) return false;
+      if (distance({ x, y }, centerOf(state.cat)) < (type === "speedShoe" ? 90 : 70)) return false;
+      if (distance({ x, y }, centerOf(state.mouse)) < (type === "cheese" ? 90 : 60)) return false;
+      return true;
+    }
+
+    function validateItemsAfterResize() {
+      [["speedShoe", 18], ["cheese", 19]].forEach(([type, radius]) => {
+        const item = state.items[type];
+        if (!item.active) return;
+        if (!isItemPositionSafe(item.x, item.y, radius, type)) {
+          const point = getRandomSafeItemPosition(radius, { type });
+          item.x = point.x;
+          item.y = point.y;
+        }
+      });
+      renderItems();
+    }
+
+    function randomizeMousePosition() {
+      const spawn = getSafeSpawnPosition(state.mouse.size / 2, "mouse");
+      state.mouse.x = spawn.x;
+      state.mouse.y = spawn.y;
+    }
+
+    function restartGame() {
+      resetJoystick();
+      if (state.gameMode === "level") startLevelGame(state.currentLevelIndex, state.campaignRun);
+      else startChallengeGame();
+    }
+
+    function returnToMenu() {
+      stopLoop();
+      clearOpeningCountdown();
+      clearTimeout(state.endTimer);
+      resetJoystick();
+      resetCatDash();
+      resetTunnelState();
+      resetItems();
+      particleLayer.innerHTML = "";
+      mouseEl.style.animationPlayState = "running";
+      loadLevelProgress();
+      showScreen("menu");
+      loadBestScore();
+    }
+
+    function pauseGame() {
+      if (!state.running || state.finished || state.paused) return;
+      state.paused = true;
+      state.running = false;
+      state.gameState = "paused";
+      cancelAnimationFrame(state.rafId);
+      updateDashButton();
+      showScreen("pause");
+    }
+
+    function resumeGame() {
+      if (state.finished) return;
+      showScreen("game");
+        measureRoom();
+        createObstacles();
+        createTunnels();
+        if (state.mouse.tunneling) resetTunnelState();
+        moveEntityToNearestSafe(state.cat, "cat");
+      moveEntityToNearestSafe(state.mouse, "mouse");
+      state.paused = false;
+      state.running = true;
+      state.gameState = "playing";
+      state.lastTime = performance.now();
+      cancelAnimationFrame(state.rafId);
+      state.rafId = requestAnimationFrame(gameLoop);
+      updateDashButton();
+    }
+
+    function stopLoop() {
+      state.running = false;
+      state.paused = false;
+      cancelAnimationFrame(state.rafId);
+      state.rafId = null;
+      updateDashButton();
+    }
+
+    function gameLoop(now) {
+      if (!state.running || state.paused || state.finished) return;
+      const dt = Math.min(0.033, (now - state.lastTime) / 1000);
+      state.lastTime = now;
+      update(dt);
+      render();
+      state.rafId = requestAnimationFrame(gameLoop);
+    }
+
+    function update(dt) {
+      state.elapsed += dt;
+      state.timeLeft = Math.max(0, state.config.time - state.elapsed);
+      updateCatDash(dt);
+      updateItems(dt);
+      updateCat(dt);
+      updateMouse(dt);
+      checkCountdownBeep();
+      checkCatch();
+      if (!state.finished && state.timeLeft <= 0) {
+        finishGame(false);
+      }
+    }
+
+    function updateCatDash(dt) {
+      if (state.cat.speedBoostTimer > 0) {
+        state.cat.speedBoostTimer = Math.max(0, state.cat.speedBoostTimer - dt);
+      }
+      if (state.cat.isDashing) {
+        state.cat.dashTimer = Math.max(0, state.cat.dashTimer - dt);
+        if (state.cat.dashTimer <= 0) {
+          state.cat.isDashing = false;
+          catEl.classList.remove("dashing");
+        }
+      }
+      if (state.cat.dashCooldownTimer > 0) {
+        state.cat.dashCooldownTimer = Math.max(0, state.cat.dashCooldownTimer - dt);
+      }
+      state.cat.dashReady = state.cat.dashCooldownTimer <= 0 && !state.cat.isDashing;
+    }
+
+    function updateItems(dt) {
+      if (!state.config.itemsEnabled) return;
+      if (state.cat.speedBoostTimer <= 0) catEl.classList.remove("speed-boosted");
+      if (state.mouse.cheeseBoostTimer > 0) {
+        state.mouse.cheeseBoostTimer = Math.max(0, state.mouse.cheeseBoostTimer - dt);
+      }
+      if (state.mouse.recentlyAteCheeseTimer > 0) {
+        state.mouse.recentlyAteCheeseTimer = Math.max(0, state.mouse.recentlyAteCheeseTimer - dt);
+      }
+      if (state.mouse.cheeseBoostTimer <= 0) mouseEl.classList.remove("cheese-boosted");
+
+      updateItemSpawnTimer("speedShoe", dt);
+      updateItemSpawnTimer("cheese", dt);
+      checkItemPickups();
+      renderItems();
+    }
+
+    function updateItemSpawnTimer(type, dt) {
+      const item = state.items[type];
+      if (item.active || state.timeLeft <= 5) return;
+      if (type === "speedShoe" && !state.config.speedShoeEnabled) return;
+      if (type === "cheese" && (!state.config.cheeseEnabled || state.mouse.cheeseBoostTimer > 0 || state.mouse.recentlyAteCheeseTimer > 0)) return;
+      item.spawnTimer = Math.max(0, item.spawnTimer - dt);
+      if (item.spawnTimer <= 0) spawnItem(type);
+    }
+
+    function spawnItem(type) {
+      const radius = type === "speedShoe" ? 18 : 19;
+      const point = getRandomSafeItemPosition(radius, { type });
+      const item = state.items[type];
+      item.active = true;
+      item.x = point.x;
+      item.y = point.y;
+    }
+
+    function checkItemPickups() {
+      const shoe = state.items.speedShoe;
+      if (shoe.active && distance(centerOf(state.cat), shoe) < 32) {
+        shoe.active = false;
+        state.cat.speedBoostTimer = 3;
+        shoe.spawnTimer = state.timeLeft > 5 ? randomRange(8, 12) : Infinity;
+        catEl.classList.add("speed-boosted");
+        playSound("speedShoe");
+        vibrate(25);
+      }
+
+      const cheese = state.items.cheese;
+      if (cheese.active && !state.mouse.tunneling && distance(centerOf(state.mouse), cheese) < 32) {
+        cheese.active = false;
+        state.mouse.cheeseBoostTimer = 2.5;
+        state.mouse.recentlyAteCheeseTimer = 8;
+        cheese.spawnTimer = state.timeLeft > 5 ? randomRange(10, 14) : Infinity;
+        mouseEl.classList.add("cheese-boosted");
+        playSound("cheeseBoost");
+        vibrate(35);
+      } else if (cheese.active && distance(centerOf(state.cat), cheese) < 32) {
+        cheese.active = false;
+        cheese.spawnTimer = state.timeLeft > 5 ? randomRange(10, 14) : Infinity;
+        playSound("cheeseBreak");
+        vibrate(20);
+      }
+    }
+
+    function triggerCatDash() {
+      ensureAudio();
+      if (!state.config.catDashEnabled) return;
+      if (state.countdownActive || state.gameState !== "playing" || !state.running || state.paused || state.finished || state.cat.isDashing || state.cat.dashCooldownTimer > 0) return;
+      if (state.input.power <= 0.2) {
+        showDashHint();
+        vibrate(15);
+        return;
+      }
+      state.cat.isDashing = true;
+      state.cat.dashTimer = state.config.catDashDuration;
+      state.cat.dashCooldownTimer = state.config.catDashCooldown;
+      state.cat.dashReady = false;
+      state.cat.lastMoveDirX = state.input.x;
+      state.cat.lastMoveDirY = state.input.y;
+      catEl.classList.add("dashing");
+      playSound("dash");
+      vibrate(30);
+      updateDashButton();
+    }
+
+    function showDashHint() {
+      dashBtn.classList.remove("hint");
+      void dashBtn.offsetWidth;
+      dashBtn.classList.add("hint");
+    }
+
+    function updateCat(dt) {
+      const input = state.input;
+      if (input.power > 0.05) {
+        state.cat.lastMoveDirX = input.x;
+        state.cat.lastMoveDirY = input.y;
+      }
+      const dashMult = state.cat.isDashing ? state.config.catDashMultiplier : 1;
+      const shoeMult = state.cat.speedBoostTimer > 0 ? 1.25 : 1;
+      const maxSpeed = state.config.catSpeed * Math.min(2.1, dashMult * shoeMult);
+      const targetVx = input.x * maxSpeed;
+      const targetVy = input.y * maxSpeed;
+      const accelStep = state.cat.acceleration * (state.cat.isDashing ? 1.45 : 1) * dt;
+
+      if (input.power > 0.02) {
+        state.cat.vx = approach(state.cat.vx, targetVx, accelStep);
+        state.cat.vy = approach(state.cat.vy, targetVy, accelStep);
+      } else {
+        const decay = Math.max(0, 1 - state.cat.friction * dt);
+        state.cat.vx *= decay;
+        state.cat.vy *= decay;
+        if (Math.abs(state.cat.vx) < 2) state.cat.vx = 0;
+        if (Math.abs(state.cat.vy) < 2) state.cat.vy = 0;
+      }
+
+      const currentSpeed = Math.hypot(state.cat.vx, state.cat.vy);
+      if (currentSpeed > maxSpeed) {
+        state.cat.vx = state.cat.vx / currentSpeed * maxSpeed;
+        state.cat.vy = state.cat.vy / currentSpeed * maxSpeed;
+      }
+
+      const moveResult = moveEntityWithObstacleCollision(
+        state.cat,
+        state.cat.x + state.cat.vx * dt,
+        state.cat.y + state.cat.vy * dt
+      );
+      if (moveResult.blockedX) state.cat.vx = 0;
+      if (moveResult.blockedY) state.cat.vy = 0;
+      if (Math.abs(state.cat.vx) > 5) state.cat.facing = state.cat.vx >= 0 ? 1 : -1;
+      if (Math.hypot(state.cat.vx, state.cat.vy) > 8) {
+        state.cat.angle = Math.atan2(state.cat.vy, Math.abs(state.cat.vx)) * 0.22;
+      } else {
+        state.cat.angle = 0;
+      }
+    }
+
+    function updateMouse(dt) {
+      const catCenter = centerOf(state.cat);
+      const mouseCenter = centerOf(state.mouse);
+      const dist = distance(catCenter, mouseCenter);
+      const predictedCat = getPredictedCatPosition();
+      const threatPoint = state.mouse.dangerMeter > 0.25 ? predictedCat : catCenter;
+      const threatDist = distance(mouseCenter, threatPoint);
+      let dirX = state.mouse.dirX;
+      let dirY = state.mouse.dirY;
+
+      state.mouse.tunnelCooldown = Math.max(0, state.mouse.tunnelCooldown - dt);
+      state.mouse.protectionTimer = Math.max(0, state.mouse.protectionTimer - dt);
+      if (state.mouse.tunneling) {
+        updateMouseTunnel(dt);
+        mouseEl.classList.toggle("protected", state.mouse.protectionTimer > 0);
+        return;
+      }
+
+      state.mouse.sprintCooldown = Math.max(0, state.mouse.sprintCooldown - dt);
+      state.mouse.sprintTimer = Math.max(0, state.mouse.sprintTimer - dt);
+      state.mouse.sprinting = state.mouse.sprintTimer > 0;
+      state.mouse.dodgeCooldown = Math.max(0, state.mouse.dodgeCooldown - dt);
+      state.mouse.dodgeTimer = Math.max(0, state.mouse.dodgeTimer - dt);
+      updateDangerMeter(dt, dist);
+      if (tryUseTunnel(dt, dist)) {
+        mouseEl.classList.toggle("protected", state.mouse.protectionTimer > 0);
+        return;
+      }
+
+      if (dist < state.config.alertDistance) {
+        const awayX = (mouseCenter.x - threatPoint.x) / (threatDist || 1);
+        const awayY = (mouseCenter.y - threatPoint.y) / (threatDist || 1);
+        if (!state.mouse.sprinting && state.mouse.sprintCooldown <= 0 && Math.random() < sprintChance(dt)) {
+          startMouseSprint(awayX, awayY);
+        }
+        if (state.config.mouseDodgeEnabled && state.mouse.dodgeTimer <= 0 && state.mouse.dodgeCooldown <= 0 && dist < state.config.alertDistance * 0.65 && Math.random() < dodgeChance(dt)) {
+          startMouseDodge(awayX, awayY, threatPoint);
+        }
+        const wobbleRange = state.mouse.sprinting ? 0.28 : 0.48 + state.mouse.dangerMeter * 0.38;
+        const wobble = (Math.random() - 0.5) * wobbleRange;
+        const cos = Math.cos(wobble);
+        const sin = Math.sin(wobble);
+        if (state.mouse.dodgeTimer > 0) {
+          dirX = awayX * 0.45 + state.mouse.dodgeX * 0.95;
+          dirY = awayY * 0.45 + state.mouse.dodgeY * 0.95;
+        } else if (!state.mouse.sprinting) {
+          dirX = awayX * cos - awayY * sin;
+          dirY = awayX * sin + awayY * cos;
+        }
+      } else {
+        state.mouse.wanderTimer -= dt;
+        if (state.mouse.wanderTimer <= 0) {
+          setWanderDirection();
+        }
+        dirX = state.mouse.dirX;
+        dirY = state.mouse.dirY;
+      }
+      const cheesePull = getCheeseAttraction(dist);
+      if (cheesePull) {
+        dirX = dirX * (1 - cheesePull.weight) + cheesePull.x * cheesePull.weight;
+        dirY = dirY * (1 - cheesePull.weight) + cheesePull.y * cheesePull.weight;
+      }
+
+      const wallPad = 42;
+      const mouseRadius = state.mouse.size / 2;
+      if (state.mouse.x < mouseRadius + wallPad) dirX += 1.2;
+      if (state.mouse.y < mouseRadius + wallPad) dirY += 1.2;
+      if (state.mouse.x > state.roomWidth - mouseRadius - wallPad) dirX -= 1.2;
+      if (state.mouse.y > state.roomHeight - mouseRadius - wallPad) dirY -= 1.2;
+      const avoid = obstacleAvoidanceVector(state.mouse);
+      dirX += avoid.x;
+      dirY += avoid.y;
+      const smarter = chooseObstacleAwareDirection(dirX, dirY, threatPoint);
+      dirX = smarter.x;
+      dirY = smarter.y;
+
+      const len = Math.hypot(dirX, dirY) || 1;
+      state.mouse.dirX = dirX / len;
+      state.mouse.dirY = dirY / len;
+      let speedFactor = state.mouse.sprinting ? state.config.sprintMultiplier : (state.mouse.sprintCooldown > 0 ? 0.9 : 1);
+      if (state.mouse.dodgeTimer > 0) speedFactor = Math.max(speedFactor, 1.25);
+      if (state.mouse.cheeseBoostTimer > 0) speedFactor *= 1.3;
+      speedFactor = Math.min(speedFactor, 2.0);
+      state.mouse.vx = state.mouse.dirX * state.config.mouseSpeed * speedFactor;
+      state.mouse.vy = state.mouse.dirY * state.config.mouseSpeed * speedFactor;
+      const beforeX = state.mouse.x;
+      const beforeY = state.mouse.y;
+      const moveResult = moveEntityWithObstacleCollision(
+        state.mouse,
+        state.mouse.x + state.mouse.vx * dt,
+        state.mouse.y + state.mouse.vy * dt
+      );
+
+      if (moveResult.blockedX || moveResult.blockedY) {
+        state.mouse.blockedCount += 1;
+        if (moveResult.blockedX) state.mouse.dirX *= -0.6;
+        if (moveResult.blockedY) state.mouse.dirY *= -0.6;
+        if (state.mouse.blockedCount >= 3) {
+          chooseMouseEscapeDirection();
+        }
+      } else {
+        state.mouse.blockedCount = Math.max(0, state.mouse.blockedCount - 1);
+      }
+      updateMouseStuckState(dt, beforeX, beforeY);
+      mouseEl.classList.toggle("sprinting", state.mouse.sprinting);
+      mouseEl.classList.toggle("protected", state.mouse.protectionTimer > 0);
+    }
+
+    function setWanderDirection() {
+      const angle = Math.random() * Math.PI * 2;
+      state.mouse.dirX = Math.cos(angle);
+      state.mouse.dirY = Math.sin(angle);
+      state.mouse.wanderTimer = 0.8 + Math.random() * 0.8;
+    }
+
+    function startMouseSprint(awayX, awayY) {
+      let baseX = awayX;
+      let baseY = awayY;
+      if (state.mouse.dodgeTimer > 0) {
+        baseX = awayX * 0.65 + state.mouse.dodgeX * 0.6;
+        baseY = awayY * 0.65 + state.mouse.dodgeY * 0.6;
+      }
+      const angle = Math.atan2(baseY, baseX) + (Math.random() - 0.5) * (0.45 + state.mouse.dangerMeter * 0.28);
+      const safeDir = chooseObstacleAwareDirection(Math.cos(angle), Math.sin(angle), getPredictedCatPosition());
+      state.mouse.dirX = safeDir.x;
+      state.mouse.dirY = safeDir.y;
+      state.mouse.sprintTimer = state.config.sprintDuration;
+      state.mouse.sprintCooldown = state.config.sprintDuration + state.config.sprintCooldown;
+      state.mouse.sprinting = true;
+    }
+
+    function getPredictedCatPosition() {
+      const speed = Math.hypot(state.cat.vx, state.cat.vy);
+      if (speed < 12) return centerOf(state.cat);
+      return {
+        x: clamp(state.cat.x + state.cat.vx * state.config.predictionTime, state.cat.size / 2, state.roomWidth - state.cat.size / 2),
+        y: clamp(state.cat.y + state.cat.vy * state.config.predictionTime, state.cat.size / 2, state.roomHeight - state.cat.size / 2)
+      };
+    }
+
+    function updateDangerMeter(dt, dist) {
+      if (dist < state.config.alertDistance) {
+        const closeness = 1 - clamp(dist / state.config.alertDistance, 0, 1);
+        state.mouse.dangerMeter = clamp(state.mouse.dangerMeter + dt * (0.45 + closeness * 1.55), 0, 1);
+      } else {
+        state.mouse.dangerMeter = clamp(state.mouse.dangerMeter - dt * 0.55, 0, 1);
+      }
+    }
+
+    function sprintChance(dt) {
+      return dt * (1.6 + state.mouse.dangerMeter * 4.8);
+    }
+
+    function dodgeChance(dt) {
+      const boost = state.mouse.cheeseBoostTimer > 0 ? 1.35 : 1;
+      return dt * (0.9 + state.mouse.dangerMeter * 3.4) * boost;
+    }
+
+    function startMouseDodge(awayX, awayY, threatPoint) {
+      const left = normalizeVector(-awayY, awayX);
+      const right = normalizeVector(awayY, -awayX);
+      const leftScore = scoreEscapeDirection(left.x, left.y, threatPoint);
+      const rightScore = scoreEscapeDirection(right.x, right.y, threatPoint);
+      const chosen = leftScore >= rightScore ? left : right;
+      if (Math.max(leftScore, rightScore) < -999) return;
+      state.mouse.dodgeX = chosen.x;
+      state.mouse.dodgeY = chosen.y;
+      state.mouse.dodgeTimer = 0.3 + Math.random() * 0.2;
+      state.mouse.dodgeCooldown = state.mouse.dodgeTimer + 1.5 + Math.random() * 0.7;
+    }
+
+    function tryUseTunnel(dt, catDistance) {
+      if (!state.config.tunnelsEnabled) return false;
+      if (state.mouse.tunnelCooldown > 0 || state.mouse.protectionTimer > 0 || state.tunnels.length < 2) return false;
+      if (catDistance >= state.config.alertDistance * state.config.tunnelTriggerRatio) return false;
+      if (state.mouse.dangerMeter < state.config.tunnelDangerMin) return false;
+      const nearest = getNearestTunnel();
+      if (!nearest || nearest.distance > 60) return false;
+      const cheeseBoost = state.mouse.cheeseBoostTimer > 0 ? 1.25 : 1;
+      if (Math.random() > state.config.tunnelChance * cheeseBoost * dt) return false;
+      enterTunnel(nearest.tunnel);
+      return true;
+    }
+
+    function getCheeseAttraction(catDistance) {
+      const cheese = state.items.cheese;
+      if (!state.config.cheeseEnabled || !cheese.active || state.mouse.cheeseBoostTimer > 0 || state.mouse.tunneling) return null;
+      const cheeseDistance = distance(centerOf(state.mouse), cheese);
+      if (cheeseDistance > 150) return null;
+      if (catDistance < state.config.alertDistance * 0.6) return null;
+      const awareness = state.config.mouseCheeseAwareness || 0;
+      if (awareness <= 0 || Math.random() > awareness * 0.08) return null;
+      const dir = normalizeVector(cheese.x - state.mouse.x, cheese.y - state.mouse.y);
+      return { x: dir.x, y: dir.y, weight: catDistance > state.config.alertDistance ? 0.45 : 0.28 };
+    }
+
+    function getNearestTunnel() {
+      let best = null;
+      state.tunnels.forEach(tunnel => {
+        const d = distance(centerOf(state.mouse), tunnel);
+        if (!best || d < best.distance) best = { tunnel, distance: d };
+      });
+      return best;
+    }
+
+    function enterTunnel(tunnel) {
+      const target = state.tunnels.find(item => item.id !== tunnel.id);
+      if (!target) return;
+      const exit = getSafeTunnelExit(target);
+      state.mouse.tunneling = true;
+      state.mouse.tunnelTimer = 0;
+      state.mouse.tunnelDuration = 0.35 + Math.random() * 0.2;
+      state.mouse.tunnelFrom = tunnel;
+      state.mouse.tunnelTo = target;
+      state.mouse.tunnelStartX = state.mouse.x;
+      state.mouse.tunnelStartY = state.mouse.y;
+      state.mouse.tunnelExitX = exit.x;
+      state.mouse.tunnelExitY = exit.y;
+      state.mouse.vx = 0;
+      state.mouse.vy = 0;
+      state.mouse.sprintTimer = 0;
+      state.mouse.dodgeTimer = 0;
+      state.mouse.sprinting = false;
+      mouseEl.classList.add("tunneling");
+      mouseEl.classList.remove("sprinting");
+    }
+
+    function updateMouseTunnel(dt) {
+      state.mouse.tunnelTimer += dt;
+      const progress = clamp(state.mouse.tunnelTimer / state.mouse.tunnelDuration, 0, 1);
+      const from = state.mouse.tunnelFrom;
+      const to = state.mouse.tunnelTo;
+      if (progress < 0.5) {
+        const t = easeInOut(progress / 0.5);
+        state.mouse.x = lerp(state.mouse.tunnelStartX, from.x, t);
+        state.mouse.y = lerp(state.mouse.tunnelStartY, from.y, t);
+        state.mouse.tunnelScale = lerp(1, 0.2, t);
+        state.mouse.tunnelOpacity = lerp(1, 0.12, t);
+      } else {
+        const t = easeInOut((progress - 0.5) / 0.5);
+        state.mouse.x = lerp(to.x, state.mouse.tunnelExitX, t);
+        state.mouse.y = lerp(to.y, state.mouse.tunnelExitY, t);
+        state.mouse.tunnelScale = lerp(0.2, 1, t);
+        state.mouse.tunnelOpacity = lerp(0.12, 1, t);
+      }
+
+      if (progress >= 1) {
+        exitTunnel();
+      }
+    }
+
+    function exitTunnel() {
+      state.mouse.tunneling = false;
+      state.mouse.x = state.mouse.tunnelExitX;
+      state.mouse.y = state.mouse.tunnelExitY;
+      state.mouse.tunnelScale = 1;
+      state.mouse.tunnelOpacity = 1;
+      state.mouse.tunnelCooldown = state.config.tunnelCooldown;
+      state.mouse.protectionTimer = state.config.tunnelProtection;
+      const away = normalizeVector(state.mouse.x - state.cat.x, state.mouse.y - state.cat.y);
+      state.mouse.dirX = away.x;
+      state.mouse.dirY = away.y;
+      state.mouse.wanderTimer = 0.35;
+      state.mouse.blockedCount = 0;
+      state.mouse.stuckTimer = 0;
+      mouseEl.classList.remove("tunneling");
+      mouseEl.classList.add("protected");
+    }
+
+    function getSafeTunnelExit(tunnel) {
+      const radius = state.mouse.size / 2;
+      const cat = centerOf(state.cat);
+      const preferredAway = normalizeVector(tunnel.x - cat.x, tunnel.y - cat.y);
+      const candidates = [{ x: tunnel.x + preferredAway.x * 58, y: tunnel.y + preferredAway.y * 58 }];
+      for (let r = 40; r <= 82; r += 14) {
+        for (let i = 0; i < 12; i += 1) {
+          const angle = i / 12 * Math.PI * 2;
+          candidates.push({ x: tunnel.x + Math.cos(angle) * r, y: tunnel.y + Math.sin(angle) * r });
+        }
+      }
+      const safe = candidates
+        .map(point => ({ x: clamp(point.x, radius, state.roomWidth - radius), y: clamp(point.y, radius, state.roomHeight - radius) }))
+        .filter(point => !isPositionBlocked(point.x, point.y, radius))
+        .sort((a, b) => distance(b, cat) - distance(a, cat))[0];
+      return safe || { x: tunnel.x, y: tunnel.y };
+    }
+
+    function bounceMouseFromWall(hitWall) {
+      if (hitWall.x) state.mouse.dirX *= -1;
+      if (hitWall.y) state.mouse.dirY *= -1;
+      const angle = Math.atan2(state.mouse.dirY, state.mouse.dirX) + (Math.random() - 0.5) * 0.8;
+      state.mouse.dirX = Math.cos(angle);
+      state.mouse.dirY = Math.sin(angle);
+      state.mouse.wanderTimer = 0.45 + Math.random() * 0.35;
+    }
+
+    function getSafeSpawnPosition(radius, preferredArea) {
+      const fallback = preferredArea === "cat"
+        ? { x: state.roomWidth * 0.18, y: state.roomHeight * 0.78 }
+        : { x: state.roomWidth * 0.82, y: state.roomHeight * 0.22 };
+      const minMouseDistance = Math.min(220, Math.max(160, Math.hypot(state.roomWidth, state.roomHeight) * 0.48));
+
+      for (let i = 0; i < 80; i += 1) {
+        let x;
+        let y;
+        if (preferredArea === "cat") {
+          x = state.roomWidth * (0.12 + Math.random() * 0.22);
+          y = state.roomHeight * (0.66 + Math.random() * 0.22);
+        } else {
+          x = state.roomWidth * (0.58 + Math.random() * 0.30);
+          y = state.roomHeight * (0.12 + Math.random() * 0.36);
+          if (i > 35) y = state.roomHeight * (0.12 + Math.random() * 0.72);
+        }
+        if (preferredArea === "mouse" && distance({ x, y }, centerOf(state.cat)) < minMouseDistance) continue;
+        if (!isPositionBlocked(x, y, radius)) return { x, y };
+      }
+
+      const safePoints = [
+        fallback,
+        { x: state.roomWidth * 0.18, y: state.roomHeight * 0.82 },
+        { x: state.roomWidth * 0.84, y: state.roomHeight * 0.18 },
+        { x: state.roomWidth * 0.82, y: state.roomHeight * 0.76 },
+        { x: state.roomWidth * 0.50, y: state.roomHeight * 0.50 }
+      ];
+      const safePoint = safePoints
+        .filter(point => !isPositionBlocked(point.x, point.y, radius))
+        .sort((a, b) => distance(b, centerOf(state.cat)) - distance(a, centerOf(state.cat)))[0];
+      return safePoint || {
+        x: clamp(fallback.x, radius, state.roomWidth - radius),
+        y: clamp(fallback.y, radius, state.roomHeight - radius)
+      };
+    }
+
+    function circleRectCollision(circle, rect) {
+      const closestX = clamp(circle.x, rect.x, rect.x + rect.w);
+      const closestY = clamp(circle.y, rect.y, rect.y + rect.h);
+      const dx = circle.x - closestX;
+      const dy = circle.y - closestY;
+      return dx * dx + dy * dy < circle.radius * circle.radius;
+    }
+
+    function resolveCircleRectCollision(entity, rect) {
+      const radius = entity.size / 2;
+      if (!circleRectCollision({ x: entity.x, y: entity.y, radius }, rect)) return false;
+
+      const closestX = clamp(entity.x, rect.x, rect.x + rect.w);
+      const closestY = clamp(entity.y, rect.y, rect.y + rect.h);
+      let dx = entity.x - closestX;
+      let dy = entity.y - closestY;
+      let dist = Math.hypot(dx, dy);
+
+      if (dist === 0) {
+        const left = Math.abs(entity.x - rect.x);
+        const right = Math.abs(rect.x + rect.w - entity.x);
+        const top = Math.abs(entity.y - rect.y);
+        const bottom = Math.abs(rect.y + rect.h - entity.y);
+        const min = Math.min(left, right, top, bottom);
+        if (min === left) { dx = -1; dy = 0; dist = 1; }
+        else if (min === right) { dx = 1; dy = 0; dist = 1; }
+        else if (min === top) { dx = 0; dy = -1; dist = 1; }
+        else { dx = 0; dy = 1; dist = 1; }
+      }
+
+      const push = radius - dist + 0.5;
+      entity.x += dx / dist * push;
+      entity.y += dy / dist * push;
+      clampToRoom(entity);
+      return true;
+    }
+
+    function collidesWithAnyObstacle(entity) {
+      const radius = entity.size / 2;
+      return state.obstacles.some(rect => circleRectCollision({ x: entity.x, y: entity.y, radius }, rect));
+    }
+
+    function moveEntityToNearestSafe(entity, preferredArea) {
+      clampToRoom(entity);
+      for (let i = 0; i < 4; i += 1) {
+        let resolved = false;
+        state.obstacles.forEach(rect => {
+          if (resolveCircleRectCollision(entity, rect)) resolved = true;
+        });
+        clampToRoom(entity);
+        if (!resolved && !collidesWithAnyObstacle(entity)) return;
+      }
+      if (collidesWithAnyObstacle(entity) || isPositionBlocked(entity.x, entity.y, entity.size / 2)) {
+        const safe = getSafeSpawnPosition(entity.size / 2, preferredArea);
+        entity.x = safe.x;
+        entity.y = safe.y;
+        entity.vx = 0;
+        entity.vy = 0;
+      }
+    }
+
+    function isPositionBlocked(x, y, radius) {
+      if (x < radius || y < radius || x > state.roomWidth - radius || y > state.roomHeight - radius) return true;
+      return state.obstacles.some(rect => circleRectCollision({ x, y, radius }, rect));
+    }
+
+    function moveEntityWithObstacleCollision(entity, nextX, nextY) {
+      const radius = entity.size / 2;
+      const startX = entity.x;
+      const startY = entity.y;
+      const blockedX = isPositionBlocked(nextX, startY, radius);
+      if (!blockedX) entity.x = nextX;
+      const blockedY = isPositionBlocked(entity.x, nextY, radius);
+      if (!blockedY) entity.y = nextY;
+      clampToRoom(entity);
+      return { blockedX, blockedY, moved: entity.x !== startX || entity.y !== startY };
+    }
+
+    function obstacleAvoidanceVector(entity) {
+      const radius = entity.size / 2;
+      const lookX = entity.x + entity.dirX * (radius + 22);
+      const lookY = entity.y + entity.dirY * (radius + 22);
+      const obstacle = state.obstacles.find(rect => circleRectCollision({ x: lookX, y: lookY, radius }, rect));
+      if (!obstacle) return { x: 0, y: 0 };
+      const centerX = obstacle.x + obstacle.w / 2;
+      const centerY = obstacle.y + obstacle.h / 2;
+      const dx = entity.x - centerX;
+      const dy = entity.y - centerY;
+      const len = Math.hypot(dx, dy) || 1;
+      return { x: dx / len * 0.9, y: dy / len * 0.9 };
+    }
+
+    function chooseObstacleAwareDirection(dirX, dirY, threatPoint) {
+      const base = normalizeVector(dirX, dirY);
+      if (!willDirectionHitObstacle(base.x, base.y)) return base;
+
+      const candidates = [
+        rotateVector(base.x, base.y, Math.PI / 4),
+        rotateVector(base.x, base.y, -Math.PI / 4),
+        rotateVector(base.x, base.y, Math.PI / 2),
+        rotateVector(base.x, base.y, -Math.PI / 2)
+      ];
+      let best = null;
+      let bestScore = -Infinity;
+      candidates.forEach(candidate => {
+        const score = scoreEscapeDirection(candidate.x, candidate.y, threatPoint);
+        if (score > bestScore) {
+          bestScore = score;
+          best = candidate;
+        }
+      });
+      if (!best || bestScore < -999) return normalizeVector(-base.y, base.x);
+      return best;
+    }
+
+    function willDirectionHitObstacle(dirX, dirY) {
+      const radius = state.mouse.size / 2;
+      const lookAhead = radius + 34 + state.mouse.dangerMeter * 18;
+      return isPositionBlocked(state.mouse.x + dirX * lookAhead, state.mouse.y + dirY * lookAhead, radius);
+    }
+
+    function scoreEscapeDirection(dirX, dirY, threatPoint) {
+      const radius = state.mouse.size / 2;
+      const lookAhead = radius + 42;
+      const nextX = state.mouse.x + dirX * lookAhead;
+      const nextY = state.mouse.y + dirY * lookAhead;
+      if (isPositionBlocked(nextX, nextY, radius)) return -1000;
+      const futureDist = distance({ x: nextX, y: nextY }, threatPoint);
+      const centerDist = distance({ x: nextX, y: nextY }, { x: state.roomWidth / 2, y: state.roomHeight / 2 });
+      return futureDist - centerDist * 0.04 + Math.random() * 8;
+    }
+
+    function rotateVector(x, y, angle) {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return normalizeVector(x * cos - y * sin, x * sin + y * cos);
+    }
+
+    function normalizeVector(x, y) {
+      const len = Math.hypot(x, y) || 1;
+      return { x: x / len, y: y / len };
+    }
+
+    function updateMouseStuckState(dt, beforeX, beforeY) {
+      const moved = Math.hypot(state.mouse.x - beforeX, state.mouse.y - beforeY);
+      if (moved < 1.1) {
+        state.mouse.stuckTimer += dt;
+      } else {
+        state.mouse.stuckTimer = Math.max(0, state.mouse.stuckTimer - dt * 2);
+      }
+
+      if (state.mouse.stuckTimer > 0.3) {
+        chooseMouseEscapeDirection();
+        state.mouse.stuckTimer = 0;
+      }
+    }
+
+    function chooseMouseEscapeDirection() {
+      const centerBiasX = state.roomWidth / 2 - state.mouse.x;
+      const centerBiasY = state.roomHeight / 2 - state.mouse.y;
+      const angle = Math.atan2(centerBiasY, centerBiasX) + (Math.random() - 0.5) * Math.PI;
+      state.mouse.dirX = Math.cos(angle);
+      state.mouse.dirY = Math.sin(angle);
+      state.mouse.wanderTimer = 0.35 + Math.random() * 0.35;
+      state.mouse.blockedCount = 0;
+    }
+
+    function checkCatch() {
+      if (state.mouse.tunneling || state.mouse.protectionTimer > 0) return;
+      const dist = distance(centerOf(state.cat), centerOf(state.mouse));
+      if (dist <= state.config.catchDistance) {
+        finishGame(true);
+      }
+    }
+
+    function checkCountdownBeep() {
+      const second = Math.ceil(state.timeLeft);
+      if (second <= 5 && second > 0 && second !== state.lastBeepSecond) {
+        state.lastBeepSecond = second;
+        playSound("tick");
+      }
+    }
+
+    function finishGame(won) {
+      if (state.finished) return;
+      state.finished = true;
+      state.running = false;
+      state.gameState = won ? "victory" : "failed";
+      clearOpeningCountdown();
+      cancelAnimationFrame(state.rafId);
+      resetJoystick();
+      state.mouse.tunneling = false;
+      state.mouse.tunnelScale = 1;
+      state.mouse.tunnelOpacity = 1;
+      state.mouse.protectionTimer = 0;
+      state.cat.isDashing = false;
+      state.cat.dashTimer = 0;
+      catEl.classList.remove("dashing");
+      mouseEl.style.animationPlayState = "paused";
+      mouseEl.classList.remove("tunneling", "protected");
+      updateDashButton();
+      render();
+      if (won) {
+        state.score = calculateScore();
+        const bestResult = state.gameMode === "level" ? saveLevelResult() : saveBestScore();
+        playSound("win");
+        vibrate([80, 40, 120]);
+        render();
+        createCatchParticles();
+        state.endTimer = window.setTimeout(() => {
+          if (!state.finished || state.screen !== "game") return;
+          showEndWin(bestResult);
+          showScreen("end");
+        }, 800);
+      } else {
+        playSound("lose");
+        vibrate(200);
+        showEndLose();
+        showScreen("end");
+      }
+    }
+
+    function calculateScore() {
+      return Math.round((1000 + Math.ceil(state.timeLeft) * 80) * state.config.multiplier);
+    }
+
+    function showEndWin(bestResult) {
+      if (state.gameMode === "level") {
+        showLevelWin(bestResult);
+        return;
+      }
+      nextLevelBtn.classList.add("hidden");
+      replayLevelBtn.classList.add("hidden");
+      againBtn.classList.remove("hidden");
+      againBtn.textContent = "再玩一次";
+      endTitle.textContent = "抓到天蓝了！";
+      const used = state.elapsed.toFixed(1);
+      const left = state.timeLeft.toFixed(1);
+      const rating = getRating();
+      const bestText = bestResult.updated ? "新纪录！" : "未刷新最佳成绩";
+      resultCard.innerHTML = `
+        <div>用时：${used} 秒</div>
+        <div>剩余时间：${left} 秒</div>
+        <div>本局分数：${state.score}</div>
+        <div>本局评级：<strong>${rating} 级捕手</strong></div>
+        <strong>${bestText}</strong>
+      `;
+    }
+
+    function getRating() {
+      const ratio = state.timeLeft / state.config.time;
+      if (ratio >= 0.6) return "S";
+      if (ratio >= 0.4) return "A";
+      if (ratio >= 0.2) return "B";
+      return "C";
+    }
+
+    function currentLevelLabel() {
+      const level = levels[state.currentLevelIndex];
+      return `第 ${level.id} 关：${level.name}`;
+    }
+
+    function saveLevelResult() {
+      loadLevelProgress();
+      const level = levels[state.currentLevelIndex];
+      const rating = getRating();
+      const stars = getLevelStars();
+      const used = Number(state.elapsed.toFixed(2));
+      const current = state.levelProgress.levelBest[level.id];
+      const scoreRecord = !current || state.score > current.score;
+      const timeRecord = !current || used < current.fastest;
+      const starRecord = !current || stars > (current.stars || 0);
+      const updated = scoreRecord || timeRecord || starRecord;
+      if (updated) {
+        state.levelProgress.levelBest[level.id] = {
+          score: Math.max(state.score, current ? current.score : 0),
+          fastest: current ? Math.min(used, current.fastest) : used,
+          stars: current ? Math.max(stars, current.stars || 0) : stars
+        };
+      }
+
+      state.levelProgress.bestLevelReached = Math.max(state.levelProgress.bestLevelReached || 1, level.id);
+      if (level.id < levels.length) {
+        state.levelProgress.highestUnlockedLevel = Math.max(state.levelProgress.highestUnlockedLevel, level.id + 1);
+      }
+
+      if (state.campaignRun) {
+        state.runTotalScore += state.score;
+        state.runTotalTime += used;
+        state.runStars += stars;
+        state.runRatings.push(rating);
+      }
+
+      let totalRecord = false;
+      if (state.campaignRun && state.currentLevelIndex === levels.length - 1 && state.runTotalScore > (state.levelProgress.bestTotalScore || 0)) {
+        state.levelProgress.bestTotalScore = state.runTotalScore;
+        totalRecord = true;
+      }
+      saveLevelProgress();
+      return { updated, totalRecord, scoreRecord, timeRecord, starRecord, stars };
+    }
+
+    function getFinalRating() {
+      const values = { S: 4, A: 3, B: 2, C: 1 };
+      if (state.runRatings.length === levels.length && state.runRatings.every(rating => rating === "S")) return "SSS";
+      const avg = state.runRatings.reduce((sum, rating) => sum + values[rating], 0) / Math.max(1, state.runRatings.length);
+      if (avg >= 3) return "A";
+      if (avg >= 2) return "B";
+      return "C";
+    }
+
+    function showEndLose() {
+      if (state.gameMode === "level") {
+        endTitle.textContent = "时间到了，天蓝逃走了！";
+        resultCard.innerHTML = `<div>当前关卡：${currentLevelLabel()}</div>`;
+        nextLevelBtn.classList.add("hidden");
+        replayLevelBtn.classList.remove("hidden");
+        againBtn.classList.add("hidden");
+        return;
+      }
+      nextLevelBtn.classList.add("hidden");
+      replayLevelBtn.classList.add("hidden");
+      againBtn.classList.remove("hidden");
+      againBtn.textContent = "再试一次";
+      endTitle.textContent = "时间到了，天蓝逃走了！";
+      resultCard.innerHTML = `
+        <div>本局难度：${state.config.label}</div>
+        <div>再试一次，姑姑差一点就追上了。</div>
+      `;
+    }
+
+    function showLevelWin(bestResult) {
+      const level = levels[state.currentLevelIndex];
+      const used = state.elapsed.toFixed(1);
+      const left = state.timeLeft.toFixed(1);
+      const rating = getRating();
+      const isFinal = state.currentLevelIndex === levels.length - 1;
+      const fullClear = isFinal && state.campaignRun;
+      replayLevelBtn.classList.remove("hidden");
+      againBtn.classList.add("hidden");
+
+      if (fullClear) {
+        const finalRating = getFinalRating();
+        endTitle.textContent = "恭喜通关！";
+        resultCard.innerHTML = `
+          <div>总得分：${state.runTotalScore}</div>
+          <div>总星级：<strong class="stars">${"★".repeat(state.runStars)}${"☆".repeat(levels.length * 3 - state.runStars)}</strong> ${state.runStars} / ${levels.length * 3}</div>
+          <div>总用时：${state.runTotalTime.toFixed(1)} 秒</div>
+          <div>最终评级：<strong>${finalRating}</strong></div>
+          <strong>${bestResult.totalRecord ? "新纪录！" : "完成挑战！"}</strong>
+        `;
+        nextLevelBtn.classList.add("hidden");
+        replayLevelBtn.classList.add("hidden");
+        againBtn.textContent = "再玩一次";
+        againBtn.classList.remove("hidden");
+      } else {
+        endTitle.textContent = "抓到天蓝了！";
+        resultCard.innerHTML = `
+          <div>当前关卡：${currentLevelLabel()}</div>
+          <div>用时：${used} 秒</div>
+          <div>剩余时间：${left} 秒</div>
+          <div>本关得分：${state.score}</div>
+          <div>本关星级：<strong class="stars">${formatStars(bestResult.stars)}</strong></div>
+          <div>评级：<strong>${rating} 级捕手</strong></div>
+          <strong>${bestResult.starRecord ? "新星级纪录！" : "继续前进！"}</strong>
+          <div>${bestResult.scoreRecord ? "刷新最佳分数" : "最佳分数未刷新"}｜${bestResult.timeRecord ? "刷新最快时间" : "最快时间未刷新"}</div>
+        `;
+        nextLevelBtn.classList.toggle("hidden", isFinal);
+      }
+    }
+
+    function createCatchParticles() {
+      particleLayer.innerHTML = "";
+      const colors = ["#ffd166", "#ef476f", "#78d39c", "#4cc9f0", "#ff9f6e", "#fff1a8"];
+      const center = centerOf(state.mouse);
+      for (let i = 0; i < 22; i += 1) {
+        const particle = document.createElement("span");
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 34 + Math.random() * 56;
+        const size = 7 + Math.random() * 10;
+        particle.className = `particle ${i % 4 === 0 ? "star" : ""}`;
+        particle.style.left = `${center.x}px`;
+        particle.style.top = `${center.y}px`;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.background = colors[i % colors.length];
+        particle.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
+        particle.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
+        particleLayer.appendChild(particle);
+      }
+      window.setTimeout(() => {
+        particleLayer.innerHTML = "";
+      }, 900);
+    }
+
+    function render() {
+      const remain = Math.ceil(state.timeLeft);
+      timePill.textContent = `时间 ${remain}`;
+      timePill.classList.toggle("time-warning", remain <= 5 && state.running);
+      scorePill.textContent = `分数 ${state.finished ? state.score : estimateScore()}`;
+      const catDashScale = state.cat.isDashing ? 1.08 : 1;
+      catEl.style.transform = `translate3d(${state.cat.x}px, ${state.cat.y}px, 0) translate(-50%, -50%) scaleX(${state.cat.facing}) scale(${catDashScale}) rotate(${state.cat.angle}rad)`;
+      const sprintScale = state.mouse.sprinting ? 1.12 : 1;
+      const tunnelScale = state.mouse.tunneling ? state.mouse.tunnelScale : 1;
+      mouseEl.style.opacity = state.mouse.tunneling ? String(state.mouse.tunnelOpacity) : "";
+      mouseEl.style.transform = `translate3d(${state.mouse.x}px, ${state.mouse.y}px, 0) translate(-50%, -50%) scale(${sprintScale * tunnelScale})`;
+      catStatus.textContent = `姑姑加速 ${state.cat.speedBoostTimer.toFixed(1)}s`;
+      catStatus.classList.toggle("hidden", state.cat.speedBoostTimer <= 0);
+      mouseStatus.textContent = `天蓝加速 ${state.mouse.cheeseBoostTimer.toFixed(1)}s`;
+      mouseStatus.classList.toggle("hidden", state.mouse.cheeseBoostTimer <= 0);
+      updateDashButton();
+    }
+
+    function updateDashButton() {
+      if (!dashBtn) return;
+      const activeGame = state.screen === "game" && !state.finished;
+      const dashEnabled = Boolean(state.config.catDashEnabled);
+      dashBtn.classList.toggle("hidden", !activeGame || !dashEnabled);
+      dashBtn.disabled = !activeGame || !dashEnabled || state.paused || !state.running || state.cat.dashCooldownTimer > 0 || state.cat.isDashing;
+      dashBtn.classList.toggle("dashing", state.cat.isDashing);
+      dashBtn.classList.toggle("cooldown", state.cat.dashCooldownTimer > 0 && !state.cat.isDashing);
+      dashBtn.classList.toggle("disabled", !activeGame || state.paused || !state.running);
+      dashBtn.classList.toggle("ready", activeGame && state.running && !state.paused && state.cat.dashCooldownTimer <= 0 && !state.cat.isDashing);
+      if (!activeGame || !dashEnabled || state.paused || !state.running) {
+        dashBtn.textContent = "冲刺";
+      } else if (state.cat.isDashing) {
+        dashBtn.textContent = "冲！";
+      } else if (state.cat.dashCooldownTimer > 0) {
+        dashBtn.textContent = `${state.cat.dashCooldownTimer.toFixed(1)}s`;
+      } else {
+        dashBtn.textContent = "冲刺";
+      }
+    }
+
+    function estimateScore() {
+      return Math.round((1000 + Math.ceil(state.timeLeft) * 80) * state.config.multiplier);
+    }
+
+    function clampToRoom(entity) {
+      const radius = entity.size / 2;
+      const nextX = Math.max(radius, Math.min(state.roomWidth - radius, entity.x));
+      const nextY = Math.max(radius, Math.min(state.roomHeight - radius, entity.y));
+      const hit = { x: nextX !== entity.x, y: nextY !== entity.y };
+      entity.x = nextX;
+      entity.y = nextY;
+      return hit;
+    }
+
+    function approach(current, target, amount) {
+      if (current < target) return Math.min(current + amount, target);
+      if (current > target) return Math.max(current - amount, target);
+      return target;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function easeInOut(t) {
+      return t * t * (3 - 2 * t);
+    }
+
+    function centerOf(entity) {
+      return { x: entity.x, y: entity.y };
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function userFeedback(type) {
+      ensureAudio();
+      playSound(type);
+      vibrate(20);
+    }
+
+    function ensureAudio() {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return;
+      if (!audioContext) audioContext = new AudioCtor();
+      if (audioContext.state === "suspended") audioContext.resume();
+    }
+
+    function playSound(type) {
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+      const sounds = {
+        click: [{ f: 520, t: 0, d: 0.055, g: 0.05 }],
+        start: [{ f: 540, t: 0, d: 0.08, g: 0.06 }, { f: 760, t: 0.09, d: 0.09, g: 0.06 }],
+        dash: [{ f: 420, t: 0, d: 0.055, g: 0.055 }, { f: 760, t: 0.045, d: 0.08, g: 0.065 }],
+        tick: [{ f: 880, t: 0, d: 0.07, g: 0.045 }],
+        win: [{ f: 620, t: 0, d: 0.11, g: 0.07 }, { f: 820, t: 0.11, d: 0.12, g: 0.07 }, { f: 1040, t: 0.24, d: 0.18, g: 0.08 }],
+        lose: [{ f: 260, t: 0, d: 0.18, g: 0.07 }, { f: 190, t: 0.19, d: 0.24, g: 0.07 }]
+      };
+      (sounds[type] || sounds.click).forEach(note => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(note.f, now + note.t);
+        gain.gain.setValueAtTime(0, now + note.t);
+        gain.gain.linearRampToValueAtTime(note.g, now + note.t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + note.t + note.d);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(now + note.t);
+        osc.stop(now + note.t + note.d + 0.02);
+      });
+    }
+
+    function vibrate(pattern) {
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    }
+
+    function saveBestScore() {
+      const key = `catMouseBest_${state.selectedDifficulty}`;
+      const current = JSON.parse(localStorage.getItem(key) || "null");
+      const next = {
+        score: state.score,
+        fastest: Number(state.elapsed.toFixed(2))
+      };
+      const updated = !current || state.score > current.score || state.elapsed < current.fastest;
+      if (updated) {
+        localStorage.setItem(key, JSON.stringify({
+          score: Math.max(next.score, current ? current.score : 0),
+          fastest: current ? Math.min(next.fastest, current.fastest) : next.fastest
+        }));
+      }
+      loadBestScore();
+      return { updated };
+    }
+
+    function loadBestScore() {
+      const key = `catMouseBest_${state.selectedDifficulty}`;
+      const data = JSON.parse(localStorage.getItem(key) || "null");
+      const label = difficulties[state.selectedDifficulty].label;
+      if (!data) {
+        bestCard.textContent = `${label}最佳成绩：暂无记录`;
+      } else {
+        bestCard.textContent = `${label}最佳成绩：${data.score} 分，最快 ${data.fastest.toFixed(1)} 秒`;
+      }
+      updateLevelProgressCard();
+      return data;
+    }
+
+    function resetJoystick() {
+      state.input.active = false;
+      state.input.id = null;
+      state.input.x = 0;
+      state.input.y = 0;
+      state.input.power = 0;
+      stick.style.transform = "translate(-50%, -50%)";
+    }
+
+    function refreshRoomBounds() {
+      if (state.screen === "game") {
+        measureRoom();
+        createObstacles();
+        createTunnels();
+        moveEntityToNearestSafe(state.cat, "cat");
+        moveEntityToNearestSafe(state.mouse, "mouse");
+        validateItemsAfterResize();
+        render();
+      }
+    }
+
+    window.addEventListener("resize", refreshRoomBounds);
+    window.addEventListener("orientationchange", () => {
+      window.setTimeout(refreshRoomBounds, 120);
+    });
+
+    initGame();
+  </script>
+</body>
+</html>
