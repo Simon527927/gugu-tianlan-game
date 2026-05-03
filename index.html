@@ -456,6 +456,7 @@
       box-shadow: 0 3px 8px rgba(67, 39, 20, 0.16);
     }
 
+    #itemsLayer,
     .items-layer {
       position: absolute;
       inset: 0;
@@ -1163,6 +1164,45 @@
   </main>
 
   <script>
+    const DEBUG_FIX = true;
+
+    const DEFAULT_GAME_CONFIG = {
+      time: 30,
+      catSpeed: 230,
+      mouseSpeed: 150,
+      catchDistance: 30,
+      alertDistance: 160,
+      multiplier: 1,
+      obstacleCount: 3,
+      tunnelsEnabled: false,
+      catDashEnabled: false,
+      mouseDodgeEnabled: false,
+      itemsEnabled: false,
+      speedShoeEnabled: false,
+      cheeseEnabled: false,
+      speedShoeFirstSpawnMin: 4,
+      speedShoeFirstSpawnMax: 6,
+      speedShoeRespawnMin: 8,
+      speedShoeRespawnMax: 12,
+      cheeseFirstSpawnMin: 7,
+      cheeseFirstSpawnMax: 10,
+      cheeseRespawnMin: 10,
+      cheeseRespawnMax: 14,
+      mouseCheeseAwareness: 0,
+      predictionTime: 0.3,
+      sprintMultiplier: 1.45,
+      sprintDuration: 0.8,
+      sprintCooldown: 2.2,
+      tunnelCooldown: 7,
+      tunnelProtection: 0.45,
+      tunnelChance: 0,
+      tunnelDangerMin: 1,
+      tunnelTriggerRatio: 0.75,
+      catDashDuration: 0.55,
+      catDashMultiplier: 1.75,
+      catDashCooldown: 5
+    };
+
     const difficulties = {
       easy: { label: "简单", time: 35, catSpeed: 220, mouseSpeed: 130, alertDistance: 150, catchDistance: 32, multiplier: 1.0, obstacleCount: 3, tunnelsEnabled: true, catDashEnabled: true, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: false, speedShoeSpawnRange: [4, 6], cheeseSpawnRange: [10, 14], mouseCheeseAwareness: 0, predictionTime: 0.25, sprintMultiplier: 1.45, sprintDuration: 0.75, sprintCooldown: 2.4, tunnelCooldown: 8, tunnelProtection: 0.35, tunnelChance: 0.45, tunnelDangerMin: 0.62, tunnelTriggerRatio: 0.75, catDashDuration: 0.65, catDashMultiplier: 1.8, catDashCooldown: 4.0 },
       normal: { label: "普通", time: 28, catSpeed: 230, mouseSpeed: 165, alertDistance: 175, catchDistance: 28, multiplier: 1.3, obstacleCount: 3, tunnelsEnabled: true, catDashEnabled: true, mouseDodgeEnabled: true, itemsEnabled: true, speedShoeEnabled: true, cheeseEnabled: true, speedShoeSpawnRange: [4, 6], cheeseSpawnRange: [7, 10], mouseCheeseAwareness: 0.65, predictionTime: 0.35, sprintMultiplier: 1.55, sprintDuration: 0.85, sprintCooldown: 2.0, tunnelCooldown: 6, tunnelProtection: 0.5, tunnelChance: 0.9, tunnelDangerMin: 0.36, tunnelTriggerRatio: 0.75, catDashDuration: 0.55, catDashMultiplier: 1.75, catDashCooldown: 5.0 },
@@ -1205,7 +1245,7 @@
     const againBtn = document.getElementById("againBtn");
     const obstaclesLayer = document.getElementById("obstaclesLayer");
     const tunnelsLayer = document.getElementById("tunnelsLayer");
-    const itemsLayer = document.getElementById("itemsLayer");
+    let itemsLayer = document.getElementById("itemsLayer");
     const particleLayer = document.getElementById("particleLayer");
     const catStatus = document.getElementById("catStatus");
     const mouseStatus = document.getElementById("mouseStatus");
@@ -1251,6 +1291,8 @@
         speedShoe: { active: false, x: 0, y: 0, spawnTimer: 0 },
         cheese: { active: false, x: 0, y: 0, spawnTimer: 0 }
       },
+      currentRunItemsDisabled: false,
+      lastDebugLog: 0,
       input: { active: false, id: null, x: 0, y: 0, power: 0 }
     };
 
@@ -1266,7 +1308,54 @@
     }
 
     function getCurrentConfig() {
-      return state.gameMode === "level" ? levels[state.currentLevelIndex] : difficulties[state.selectedDifficulty];
+      return getCurrentGameConfig();
+    }
+
+    function getCurrentGameConfig() {
+      const source = state.gameMode === "level" ? levels[state.currentLevelIndex] : difficulties[state.selectedDifficulty];
+      return normalizeConfig(source || {});
+    }
+
+    function normalizeConfig(source) {
+      const cfg = { ...DEFAULT_GAME_CONFIG, ...source };
+      const shoeFirst = Array.isArray(source.speedShoeSpawnRange) ? source.speedShoeSpawnRange : [cfg.speedShoeFirstSpawnMin, cfg.speedShoeFirstSpawnMax];
+      const cheeseFirst = Array.isArray(source.cheeseSpawnRange) ? source.cheeseSpawnRange : [cfg.cheeseFirstSpawnMin, cfg.cheeseFirstSpawnMax];
+      cfg.time = safeNumber(cfg.time, DEFAULT_GAME_CONFIG.time);
+      cfg.catSpeed = safeNumber(cfg.catSpeed, DEFAULT_GAME_CONFIG.catSpeed);
+      cfg.mouseSpeed = safeNumber(cfg.mouseSpeed, DEFAULT_GAME_CONFIG.mouseSpeed);
+      cfg.catchDistance = safeNumber(cfg.catchDistance, DEFAULT_GAME_CONFIG.catchDistance);
+      cfg.alertDistance = safeNumber(cfg.alertDistance, DEFAULT_GAME_CONFIG.alertDistance);
+      cfg.multiplier = safeNumber(cfg.multiplier, DEFAULT_GAME_CONFIG.multiplier);
+      cfg.obstacleCount = Math.max(0, Math.round(safeNumber(cfg.obstacleCount, DEFAULT_GAME_CONFIG.obstacleCount)));
+      cfg.speedShoeFirstSpawnMin = safeNumber(shoeFirst[0], DEFAULT_GAME_CONFIG.speedShoeFirstSpawnMin);
+      cfg.speedShoeFirstSpawnMax = safeNumber(shoeFirst[1], DEFAULT_GAME_CONFIG.speedShoeFirstSpawnMax);
+      cfg.speedShoeRespawnMin = safeNumber(cfg.speedShoeRespawnMin, DEFAULT_GAME_CONFIG.speedShoeRespawnMin);
+      cfg.speedShoeRespawnMax = safeNumber(cfg.speedShoeRespawnMax, DEFAULT_GAME_CONFIG.speedShoeRespawnMax);
+      cfg.cheeseFirstSpawnMin = safeNumber(cheeseFirst[0], DEFAULT_GAME_CONFIG.cheeseFirstSpawnMin);
+      cfg.cheeseFirstSpawnMax = safeNumber(cheeseFirst[1], DEFAULT_GAME_CONFIG.cheeseFirstSpawnMax);
+      cfg.cheeseRespawnMin = safeNumber(cfg.cheeseRespawnMin, DEFAULT_GAME_CONFIG.cheeseRespawnMin);
+      cfg.cheeseRespawnMax = safeNumber(cfg.cheeseRespawnMax, DEFAULT_GAME_CONFIG.cheeseRespawnMax);
+      cfg.mouseCheeseAwareness = safeNumber(cfg.mouseCheeseAwareness, DEFAULT_GAME_CONFIG.mouseCheeseAwareness);
+      cfg.predictionTime = safeNumber(cfg.predictionTime, DEFAULT_GAME_CONFIG.predictionTime);
+      cfg.sprintMultiplier = safeNumber(cfg.sprintMultiplier, DEFAULT_GAME_CONFIG.sprintMultiplier);
+      cfg.sprintDuration = safeNumber(cfg.sprintDuration, DEFAULT_GAME_CONFIG.sprintDuration);
+      cfg.sprintCooldown = safeNumber(cfg.sprintCooldown, DEFAULT_GAME_CONFIG.sprintCooldown);
+      cfg.tunnelCooldown = safeNumber(cfg.tunnelCooldown, DEFAULT_GAME_CONFIG.tunnelCooldown);
+      cfg.tunnelProtection = safeNumber(cfg.tunnelProtection, DEFAULT_GAME_CONFIG.tunnelProtection);
+      cfg.tunnelChance = safeNumber(cfg.tunnelChance, DEFAULT_GAME_CONFIG.tunnelChance);
+      cfg.tunnelDangerMin = safeNumber(cfg.tunnelDangerMin, DEFAULT_GAME_CONFIG.tunnelDangerMin);
+      cfg.tunnelTriggerRatio = safeNumber(cfg.tunnelTriggerRatio, DEFAULT_GAME_CONFIG.tunnelTriggerRatio);
+      cfg.catDashDuration = safeNumber(cfg.catDashDuration, DEFAULT_GAME_CONFIG.catDashDuration);
+      cfg.catDashMultiplier = safeNumber(cfg.catDashMultiplier, DEFAULT_GAME_CONFIG.catDashMultiplier);
+      cfg.catDashCooldown = safeNumber(cfg.catDashCooldown, DEFAULT_GAME_CONFIG.catDashCooldown);
+      cfg.itemsEnabled = Boolean(cfg.itemsEnabled);
+      cfg.speedShoeEnabled = Boolean(cfg.itemsEnabled && cfg.speedShoeEnabled);
+      cfg.cheeseEnabled = Boolean(cfg.itemsEnabled && cfg.cheeseEnabled);
+      if (cfg.speedShoeFirstSpawnMax < cfg.speedShoeFirstSpawnMin) cfg.speedShoeFirstSpawnMax = cfg.speedShoeFirstSpawnMin;
+      if (cfg.speedShoeRespawnMax < cfg.speedShoeRespawnMin) cfg.speedShoeRespawnMax = cfg.speedShoeRespawnMin;
+      if (cfg.cheeseFirstSpawnMax < cfg.cheeseFirstSpawnMin) cfg.cheeseFirstSpawnMax = cfg.cheeseFirstSpawnMin;
+      if (cfg.cheeseRespawnMax < cfg.cheeseRespawnMin) cfg.cheeseRespawnMax = cfg.cheeseRespawnMin;
+      return cfg;
     }
 
     function initGame() {
@@ -1478,7 +1567,7 @@
     function selectDifficulty(key) {
       state.gameMode = "challenge";
       state.selectedDifficulty = key;
-      state.config = difficulties[key];
+      state.config = getCurrentGameConfig();
       resetCatDash();
       document.querySelectorAll(".difficulty-btn").forEach(button => {
         button.classList.toggle("selected", button.dataset.difficulty === key);
@@ -1489,7 +1578,7 @@
 
     function startChallengeGame() {
       state.gameMode = "challenge";
-      state.config = difficulties[state.selectedDifficulty];
+      state.config = getCurrentGameConfig();
       state.campaignRun = false;
       state.runTotalScore = 0;
       state.runTotalTime = 0;
@@ -1513,12 +1602,13 @@
         state.runStars = 0;
         state.runRatings = [];
       }
-      state.config = levels[state.currentLevelIndex];
+      state.config = getCurrentGameConfig();
       startGame();
     }
 
     function startGame() {
       state.config = getCurrentConfig();
+      state.currentRunItemsDisabled = false;
       showScreen("game");
       setupRound();
       state.paused = false;
@@ -1566,6 +1656,7 @@
       state.lastTime = performance.now();
       cancelAnimationFrame(state.rafId);
       state.rafId = requestAnimationFrame(gameLoop);
+      if (DEBUG_FIX) console.log("DEBUG_FIX countdown finished", { gameState: state.gameState, gameMode: state.gameMode, config: state.config });
       updateDashButton();
     }
 
@@ -1636,15 +1727,28 @@
     }
 
     function resetItems() {
+      ensureItemsLayer();
+      state.currentRunItemsDisabled = false;
       state.items.speedShoe.active = false;
       state.items.cheese.active = false;
-      state.items.speedShoe.spawnTimer = state.config.itemsEnabled && state.config.speedShoeEnabled ? randomRange(...state.config.speedShoeSpawnRange) : Infinity;
-      state.items.cheese.spawnTimer = state.config.itemsEnabled && state.config.cheeseEnabled ? randomRange(...state.config.cheeseSpawnRange) : Infinity;
+      state.items.speedShoe.x = 0;
+      state.items.speedShoe.y = 0;
+      state.items.cheese.x = 0;
+      state.items.cheese.y = 0;
+      state.items.speedShoe.spawnTimer = state.config.itemsEnabled && state.config.speedShoeEnabled
+        ? randomRange(state.config.speedShoeFirstSpawnMin, state.config.speedShoeFirstSpawnMax)
+        : Infinity;
+      state.items.cheese.spawnTimer = state.config.itemsEnabled && state.config.cheeseEnabled
+        ? randomRange(state.config.cheeseFirstSpawnMin, state.config.cheeseFirstSpawnMax)
+        : Infinity;
+      state.cat.speedBoostTimer = 0;
       state.mouse.cheeseBoostTimer = 0;
       state.mouse.recentlyAteCheeseTimer = 0;
+      catEl.classList.remove("speed-boosted");
       mouseEl.classList.remove("cheese-boosted");
+      catStatus.classList.add("hidden");
       mouseStatus.classList.add("hidden");
-      itemsLayer.innerHTML = "";
+      if (itemsLayer) itemsLayer.innerHTML = "";
     }
 
     function resetTunnelState() {
@@ -1834,13 +1938,24 @@
     }
 
     function renderItems() {
+      ensureItemsLayer();
+      if (!itemsLayer || !state.items) return;
       itemsLayer.innerHTML = "";
-      if (state.items.speedShoe.active) {
+      if (state.items.speedShoe && state.items.speedShoe.active) {
         itemsLayer.appendChild(createItemElement("speedShoe", "item-speed-shoe", "👟"));
       }
-      if (state.items.cheese.active) {
+      if (state.items.cheese && state.items.cheese.active) {
         itemsLayer.appendChild(createItemElement("cheese", "item-cheese", "🧀⚡"));
       }
+    }
+
+    function ensureItemsLayer() {
+      if (itemsLayer) return itemsLayer;
+      itemsLayer = document.createElement("div");
+      itemsLayer.id = "itemsLayer";
+      itemsLayer.className = "items-layer";
+      room.appendChild(itemsLayer);
+      return itemsLayer;
     }
 
     function createItemElement(type, className, text) {
@@ -1854,26 +1969,53 @@
     }
 
     function getRandomSafeItemPosition(radius, options = {}) {
+      const minX = radius + 20;
+      const maxX = Math.max(minX, state.roomWidth - radius - 20);
+      const minY = radius + 20;
+      const maxY = Math.max(minY, state.roomHeight - radius - 20);
       for (let i = 0; i < 80; i += 1) {
-        const x = randomRange(radius + 20, state.roomWidth - radius - 20);
-        const y = randomRange(radius + 20, state.roomHeight - radius - 20);
+        const x = randomRange(minX, maxX);
+        const y = randomRange(minY, maxY);
         if (isItemPositionSafe(x, y, radius, options.type)) return { x, y };
       }
       const fallback = [
+        { x: state.roomWidth * 0.25, y: state.roomHeight * 0.35 },
+        { x: state.roomWidth * 0.75, y: state.roomHeight * 0.35 },
+        { x: state.roomWidth * 0.25, y: state.roomHeight * 0.70 },
+        { x: state.roomWidth * 0.75, y: state.roomHeight * 0.70 },
+        { x: state.roomWidth * 0.50, y: state.roomHeight * 0.50 },
         { x: state.roomWidth * 0.5, y: state.roomHeight * 0.18 },
         { x: state.roomWidth * 0.18, y: state.roomHeight * 0.5 },
         { x: state.roomWidth * 0.82, y: state.roomHeight * 0.5 },
         { x: state.roomWidth * 0.5, y: state.roomHeight * 0.82 }
       ].find(point => isItemPositionSafe(point.x, point.y, radius, options.type));
-      return fallback || { x: state.roomWidth / 2, y: state.roomHeight / 2 };
+      if (fallback) return fallback;
+      return findNearestOpenPoint(state.roomWidth / 2, state.roomHeight / 2, radius);
     }
 
     function isItemPositionSafe(x, y, radius, type) {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
       if (isPositionBlocked(x, y, radius)) return false;
       if (state.tunnels.some(tunnel => distance({ x, y }, tunnel) < tunnel.radius + radius + 10)) return false;
       if (distance({ x, y }, centerOf(state.cat)) < (type === "speedShoe" ? 90 : 70)) return false;
       if (distance({ x, y }, centerOf(state.mouse)) < (type === "cheese" ? 90 : 60)) return false;
       return true;
+    }
+
+    function findNearestOpenPoint(x, y, radius) {
+      const safeX = clamp(safeNumber(x, state.roomWidth / 2), radius + 8, state.roomWidth - radius - 8);
+      const safeY = clamp(safeNumber(y, state.roomHeight / 2), radius + 8, state.roomHeight - radius - 8);
+      if (!isPositionBlocked(safeX, safeY, radius)) return { x: safeX, y: safeY };
+      for (let ring = 1; ring <= 8; ring += 1) {
+        const step = ring * 18;
+        for (let i = 0; i < 12; i += 1) {
+          const angle = (Math.PI * 2 * i) / 12;
+          const px = clamp(safeX + Math.cos(angle) * step, radius + 8, state.roomWidth - radius - 8);
+          const py = clamp(safeY + Math.sin(angle) * step, radius + 8, state.roomHeight - radius - 8);
+          if (!isPositionBlocked(px, py, radius)) return { x: px, y: py };
+        }
+      }
+      return null;
     }
 
     function validateItemsAfterResize() {
@@ -1954,7 +2096,7 @@
 
     function gameLoop(now) {
       if (!state.running || state.paused || state.finished) return;
-      const dt = Math.min(0.033, (now - state.lastTime) / 1000);
+      const dt = Math.min(0.033, Math.max(0, safeNumber((now - state.lastTime) / 1000, 0)));
       state.lastTime = now;
       update(dt);
       render();
@@ -1962,14 +2104,18 @@
     }
 
     function update(dt) {
+      if (state.gameState !== "playing") return;
+      dt = Math.min(0.05, Math.max(0, safeNumber(dt, 0)));
+      sanitizeGameNumbers();
       state.elapsed += dt;
       state.timeLeft = Math.max(0, state.config.time - state.elapsed);
       updateCatDash(dt);
-      updateItems(dt);
+      safeUpdateItems(dt);
       updateCat(dt);
       updateMouse(dt);
       checkCountdownBeep();
       checkCatch();
+      debugFixLog();
       if (!state.finished && state.timeLeft <= 0) {
         finishGame(false);
       }
@@ -1993,7 +2139,9 @@
     }
 
     function updateItems(dt) {
-      if (!state.config.itemsEnabled) return;
+      if (state.gameState !== "playing" || state.currentRunItemsDisabled || !state.config.itemsEnabled) return;
+      if (!state.items || !state.items.speedShoe || !state.items.cheese) resetItemStateObjects();
+      ensureItemsLayer();
       if (state.cat.speedBoostTimer <= 0) catEl.classList.remove("speed-boosted");
       if (state.mouse.cheeseBoostTimer > 0) {
         state.mouse.cheeseBoostTimer = Math.max(0, state.mouse.cheeseBoostTimer - dt);
@@ -2009,11 +2157,42 @@
       renderItems();
     }
 
+    function safeUpdateItems(dt) {
+      try {
+        updateItems(dt);
+      } catch (error) {
+        console.error("Item system error:", error);
+        disableItemsForCurrentRun();
+      }
+    }
+
+    function disableItemsForCurrentRun() {
+      state.currentRunItemsDisabled = true;
+      resetItemStateObjects();
+      state.cat.speedBoostTimer = 0;
+      state.mouse.cheeseBoostTimer = 0;
+      state.mouse.recentlyAteCheeseTimer = 0;
+      catEl.classList.remove("speed-boosted");
+      mouseEl.classList.remove("cheese-boosted");
+      catStatus.classList.add("hidden");
+      mouseStatus.classList.add("hidden");
+      if (itemsLayer) itemsLayer.innerHTML = "";
+    }
+
+    function resetItemStateObjects() {
+      state.items = {
+        speedShoe: { active: false, x: 0, y: 0, spawnTimer: Infinity },
+        cheese: { active: false, x: 0, y: 0, spawnTimer: Infinity }
+      };
+    }
+
     function updateItemSpawnTimer(type, dt) {
       const item = state.items[type];
+      if (!item) return;
       if (item.active || state.timeLeft <= 5) return;
       if (type === "speedShoe" && !state.config.speedShoeEnabled) return;
       if (type === "cheese" && (!state.config.cheeseEnabled || state.mouse.cheeseBoostTimer > 0 || state.mouse.recentlyAteCheeseTimer > 0)) return;
+      item.spawnTimer = safeNumber(item.spawnTimer, 0);
       item.spawnTimer = Math.max(0, item.spawnTimer - dt);
       if (item.spawnTimer <= 0) spawnItem(type);
     }
@@ -2022,34 +2201,44 @@
       const radius = type === "speedShoe" ? 18 : 19;
       const point = getRandomSafeItemPosition(radius, { type });
       const item = state.items[type];
+      if (!item || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+        console.warn("道具生成失败，跳过本次刷新", type);
+        if (item) item.spawnTimer = type === "speedShoe"
+          ? randomRange(state.config.speedShoeRespawnMin, state.config.speedShoeRespawnMax)
+          : randomRange(state.config.cheeseRespawnMin, state.config.cheeseRespawnMax);
+        return;
+      }
       item.active = true;
       item.x = point.x;
       item.y = point.y;
+      console.log(type === "speedShoe" ? "Spawn speed shoe" : "Spawn cheese", item);
+      renderItems();
     }
 
     function checkItemPickups() {
+      if (state.gameState !== "playing" || state.currentRunItemsDisabled || !state.config.itemsEnabled || !state.items) return;
       const shoe = state.items.speedShoe;
-      if (shoe.active && distance(centerOf(state.cat), shoe) < 32) {
+      if (shoe && shoe.active && state.config.speedShoeEnabled && distance(centerOf(state.cat), shoe) < 32) {
         shoe.active = false;
         state.cat.speedBoostTimer = 3;
-        shoe.spawnTimer = state.timeLeft > 5 ? randomRange(8, 12) : Infinity;
+        shoe.spawnTimer = state.timeLeft > 5 ? randomRange(state.config.speedShoeRespawnMin, state.config.speedShoeRespawnMax) : Infinity;
         catEl.classList.add("speed-boosted");
         playSound("speedShoe");
         vibrate(25);
       }
 
       const cheese = state.items.cheese;
-      if (cheese.active && !state.mouse.tunneling && distance(centerOf(state.mouse), cheese) < 32) {
+      if (cheese && cheese.active && state.config.cheeseEnabled && !state.mouse.tunneling && distance(centerOf(state.mouse), cheese) < 32) {
         cheese.active = false;
         state.mouse.cheeseBoostTimer = 2.5;
         state.mouse.recentlyAteCheeseTimer = 8;
-        cheese.spawnTimer = state.timeLeft > 5 ? randomRange(10, 14) : Infinity;
+        cheese.spawnTimer = state.timeLeft > 5 ? randomRange(state.config.cheeseRespawnMin, state.config.cheeseRespawnMax) : Infinity;
         mouseEl.classList.add("cheese-boosted");
         playSound("cheeseBoost");
         vibrate(35);
-      } else if (cheese.active && distance(centerOf(state.cat), cheese) < 32) {
+      } else if (cheese && cheese.active && state.config.cheeseEnabled && distance(centerOf(state.cat), cheese) < 32) {
         cheese.active = false;
-        cheese.spawnTimer = state.timeLeft > 5 ? randomRange(10, 14) : Infinity;
+        cheese.spawnTimer = state.timeLeft > 5 ? randomRange(state.config.cheeseRespawnMin, state.config.cheeseRespawnMax) : Infinity;
         playSound("cheeseBreak");
         vibrate(20);
       }
@@ -2083,14 +2272,16 @@
     }
 
     function updateCat(dt) {
+      sanitizeEntity(state.cat, "cat");
       const input = state.input;
       if (input.power > 0.05) {
         state.cat.lastMoveDirX = input.x;
         state.cat.lastMoveDirY = input.y;
       }
-      const dashMult = state.cat.isDashing ? state.config.catDashMultiplier : 1;
+      const baseSpeed = Math.max(1, safeNumber(state.config.catSpeed, DEFAULT_GAME_CONFIG.catSpeed));
+      const dashMult = state.cat.isDashing ? safeNumber(state.config.catDashMultiplier, DEFAULT_GAME_CONFIG.catDashMultiplier) : 1;
       const shoeMult = state.cat.speedBoostTimer > 0 ? 1.25 : 1;
-      const maxSpeed = state.config.catSpeed * Math.min(2.1, dashMult * shoeMult);
+      const maxSpeed = baseSpeed * Math.min(2.1, safeNumber(dashMult * shoeMult, 1));
       const targetVx = input.x * maxSpeed;
       const targetVy = input.y * maxSpeed;
       const accelStep = state.cat.acceleration * (state.cat.isDashing ? 1.45 : 1) * dt;
@@ -2128,6 +2319,7 @@
     }
 
     function updateMouse(dt) {
+      sanitizeEntity(state.mouse, "mouse");
       const catCenter = centerOf(state.cat);
       const mouseCenter = centerOf(state.mouse);
       const dist = distance(catCenter, mouseCenter);
@@ -2156,13 +2348,14 @@
         return;
       }
 
-      if (dist < state.config.alertDistance) {
+      const alertDistance = Math.max(1, safeNumber(state.config.alertDistance, DEFAULT_GAME_CONFIG.alertDistance));
+      if (dist < alertDistance) {
         const awayX = (mouseCenter.x - threatPoint.x) / (threatDist || 1);
         const awayY = (mouseCenter.y - threatPoint.y) / (threatDist || 1);
         if (!state.mouse.sprinting && state.mouse.sprintCooldown <= 0 && Math.random() < sprintChance(dt)) {
           startMouseSprint(awayX, awayY);
         }
-        if (state.config.mouseDodgeEnabled && state.mouse.dodgeTimer <= 0 && state.mouse.dodgeCooldown <= 0 && dist < state.config.alertDistance * 0.65 && Math.random() < dodgeChance(dt)) {
+        if (state.config.mouseDodgeEnabled && state.mouse.dodgeTimer <= 0 && state.mouse.dodgeCooldown <= 0 && dist < alertDistance * 0.65 && Math.random() < dodgeChance(dt)) {
           startMouseDodge(awayX, awayY, threatPoint);
         }
         const wobbleRange = state.mouse.sprinting ? 0.28 : 0.48 + state.mouse.dangerMeter * 0.38;
@@ -2206,12 +2399,13 @@
       const len = Math.hypot(dirX, dirY) || 1;
       state.mouse.dirX = dirX / len;
       state.mouse.dirY = dirY / len;
-      let speedFactor = state.mouse.sprinting ? state.config.sprintMultiplier : (state.mouse.sprintCooldown > 0 ? 0.9 : 1);
+      const baseMouseSpeed = Math.max(1, safeNumber(state.config.mouseSpeed, DEFAULT_GAME_CONFIG.mouseSpeed));
+      let speedFactor = state.mouse.sprinting ? safeNumber(state.config.sprintMultiplier, DEFAULT_GAME_CONFIG.sprintMultiplier) : (state.mouse.sprintCooldown > 0 ? 0.9 : 1);
       if (state.mouse.dodgeTimer > 0) speedFactor = Math.max(speedFactor, 1.25);
       if (state.mouse.cheeseBoostTimer > 0) speedFactor *= 1.3;
-      speedFactor = Math.min(speedFactor, 2.0);
-      state.mouse.vx = state.mouse.dirX * state.config.mouseSpeed * speedFactor;
-      state.mouse.vy = state.mouse.dirY * state.config.mouseSpeed * speedFactor;
+      speedFactor = Math.min(safeNumber(speedFactor, 1), 2.0);
+      state.mouse.vx = state.mouse.dirX * baseMouseSpeed * speedFactor;
+      state.mouse.vy = state.mouse.dirY * baseMouseSpeed * speedFactor;
       const beforeX = state.mouse.x;
       const beforeY = state.mouse.y;
       const moveResult = moveEntityWithObstacleCollision(
@@ -2918,6 +3112,76 @@
       return Math.max(min, Math.min(max, value));
     }
 
+    function safeNumber(value, fallback = 0) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : fallback;
+    }
+
+    function randomRange(min, max) {
+      const safeMin = safeNumber(min, 0);
+      const safeMax = safeNumber(max, safeMin);
+      const low = Math.min(safeMin, safeMax);
+      const high = Math.max(safeMin, safeMax);
+      return low + Math.random() * (high - low);
+    }
+
+    function sanitizeGameNumbers() {
+      state.config = normalizeConfig(state.config || getCurrentGameConfig());
+      sanitizeEntity(state.cat, "cat");
+      sanitizeEntity(state.mouse, "mouse");
+      state.elapsed = Math.max(0, safeNumber(state.elapsed, 0));
+      state.timeLeft = Math.max(0, safeNumber(state.timeLeft, state.config.time));
+    }
+
+    function sanitizeEntity(entity, role) {
+      const radius = safeNumber(entity.size, role === "cat" ? 56 : 40) / 2;
+      const fallback = getFallbackEntityPosition(role, radius);
+      const hadInvalid = !Number.isFinite(entity.x) || !Number.isFinite(entity.y) || !Number.isFinite(entity.vx) || !Number.isFinite(entity.vy);
+      entity.x = safeNumber(entity.x, fallback.x);
+      entity.y = safeNumber(entity.y, fallback.y);
+      entity.vx = safeNumber(entity.vx, 0);
+      entity.vy = safeNumber(entity.vy, 0);
+      entity.size = safeNumber(entity.size, role === "cat" ? 56 : 40);
+      clampToRoom(entity);
+      if (hadInvalid) {
+        console.warn("发现非法坐标或速度，已重置到安全位置", role, { x: entity.x, y: entity.y, vx: entity.vx, vy: entity.vy });
+        moveEntityToNearestSafe(entity, role);
+      }
+    }
+
+    function getFallbackEntityPosition(role, radius) {
+      const x = role === "cat" ? radius + 36 : state.roomWidth - radius - 36;
+      const y = role === "cat" ? state.roomHeight - radius - 36 : radius + 36;
+      return {
+        x: clamp(safeNumber(x, state.roomWidth / 2), radius, Math.max(radius, state.roomWidth - radius)),
+        y: clamp(safeNumber(y, state.roomHeight / 2), radius, Math.max(radius, state.roomHeight - radius))
+      };
+    }
+
+    function debugFixLog() {
+      if (!DEBUG_FIX) return;
+      const now = performance.now();
+      if (now - state.lastDebugLog < 1000) return;
+      state.lastDebugLog = now;
+      const hasNaN = [state.cat.x, state.cat.y, state.cat.vx, state.cat.vy, state.mouse.x, state.mouse.y, state.mouse.vx, state.mouse.vy, state.items.speedShoe.spawnTimer, state.items.cheese.spawnTimer]
+        .some(value => Number.isNaN(Number(value)));
+      console.log("DEBUG_FIX", {
+        gameState: state.gameState,
+        gameMode: state.gameMode,
+        level: state.gameMode === "level" ? currentLevelLabel() : state.config.label,
+        config: state.config,
+        itemsEnabled: state.config.itemsEnabled,
+        speedShoeEnabled: state.config.speedShoeEnabled,
+        cheeseEnabled: state.config.cheeseEnabled,
+        speedShoe: state.items.speedShoe,
+        cheese: state.items.cheese,
+        cat: { x: state.cat.x, y: state.cat.y, vx: state.cat.vx, vy: state.cat.vy },
+        mouse: { x: state.mouse.x, y: state.mouse.y, vx: state.mouse.vx, vy: state.mouse.vy },
+        hasNaN,
+        itemsDisabled: state.currentRunItemsDisabled
+      });
+    }
+
     function lerp(a, b, t) {
       return a + (b - a) * t;
     }
@@ -2954,6 +3218,9 @@
         click: [{ f: 520, t: 0, d: 0.055, g: 0.05 }],
         start: [{ f: 540, t: 0, d: 0.08, g: 0.06 }, { f: 760, t: 0.09, d: 0.09, g: 0.06 }],
         dash: [{ f: 420, t: 0, d: 0.055, g: 0.055 }, { f: 760, t: 0.045, d: 0.08, g: 0.065 }],
+        speedShoe: [{ f: 680, t: 0, d: 0.06, g: 0.045 }, { f: 980, t: 0.055, d: 0.08, g: 0.055 }],
+        cheeseBoost: [{ f: 520, t: 0, d: 0.05, g: 0.045 }, { f: 940, t: 0.045, d: 0.06, g: 0.05 }, { f: 720, t: 0.095, d: 0.08, g: 0.04 }],
+        cheeseBreak: [{ f: 240, t: 0, d: 0.045, g: 0.035 }, { f: 180, t: 0.04, d: 0.055, g: 0.03 }],
         tick: [{ f: 880, t: 0, d: 0.07, g: 0.045 }],
         win: [{ f: 620, t: 0, d: 0.11, g: 0.07 }, { f: 820, t: 0.11, d: 0.12, g: 0.07 }, { f: 1040, t: 0.24, d: 0.18, g: 0.08 }],
         lose: [{ f: 260, t: 0, d: 0.18, g: 0.07 }, { f: 190, t: 0.19, d: 0.24, g: 0.07 }]
